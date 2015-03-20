@@ -1,0 +1,24 @@
+# -*- makefile -*-
+
+tests/%.output: FSDISK = 2
+tests/%.output: PUTFILES = $(filter-out os.dsk, $^)
+
+tests/klaar_TESTS = $(addprefix tests/klaar/,read-bad-buf low-mem \
+exec-corrupt)
+
+tests/klaar_PROGS = $(tests/klaar_TESTS) $(addprefix \
+tests/klaar/,child-simple)
+
+tests/klaar/read-bad-buf_SRC = tests/klaar/read-bad-buf.c tests/main.c
+tests/klaar/low-mem_SRC = tests/klaar/low-mem.c tests/main.c
+tests/klaar/exec-corrupt_SRC += tests/klaar/exec-corrupt.c tests/main.c
+
+tests/klaar/child-simple_SRC = tests/klaar/child-simple.c
+
+$(foreach prog,$(tests/klaar_PROGS),$(eval $(prog)_SRC += tests/lib.c))
+
+tests/klaar/read-bad-buf_PUTFILES += tests/klaar/sample.txt
+tests/klaar/low-mem_PUTFILES += tests/klaar/child-simple
+tests/klaar/exec-corrupt_PUTFILES += tests/klaar/corrupt-elf
+
+tests/klaar/low-mem.output: KERNELFLAGS = -tcl=3
