@@ -69,7 +69,13 @@ $(foreach test,$(TESTS),$(eval $(test).output: TEST = $(test)))
 # Prevent an environment variable VERBOSE from surprising us.
 VERBOSE =
 
+# klaar@ida 2015-05-12: to run gmake check in Solaris
+ifneq (0, $(shell expr `uname -s` : 'Linux'))
 TESTCMD = pintos -v -k -T $(TIMEOUT)
+else
+TESTCMD = spintos -v -k -T $(TIMEOUT)
+endif
+
 TESTCMD += $(SIMULATOR)
 TESTCMD += $(PINTOSOPTS)
 ifeq ($(filter userprog, $(KERNEL_SUBDIRS)), userprog)
