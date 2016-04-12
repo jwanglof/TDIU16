@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <syscall.h>
+#include <lib/user/syscall.h>
 
 int mystrlen(char *start);
 int getline(char *buf, int size);
@@ -21,11 +22,17 @@ int main(void)
   {
     length = getline(buf, 10);
     
-    if (length != mystrlen(buf))
+    if (length != mystrlen(buf)) {
+      printf("# LOOOOOL\n");
       exit(111);
+    }
 
-    if (length < 1)
+    if (length < 1) {
+      printf("# LENGTH BREAK\n");
       break;
+    }
+
+    printf("# WRITING???\n");
     
     write(STDOUT_FILENO, buf, length);
     write(STDOUT_FILENO, &endl, 1);

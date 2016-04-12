@@ -36,4 +36,5 @@ overflow
 dir_stress
 create_file
 create_remove_file
+flist_example
 *.d

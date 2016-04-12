@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <syscall.h>
+#include <lib/user/syscall.h>
 
 #define SIZE 1024
 #define JUNK 0xCCCC /* 52428 */
@@ -42,21 +43,21 @@ int main(int argc, char* argv[])
 {
   int id = JUNK;
   int i, j;
-  
+/*
   msg ( "* ------------------ write screen test ------------------ *" );
   {
     char* msg = "Now displaying the arguments to main\n";
     int length = strlen (msg);
     int result = JUNK;
-    
-    result = write (STDOUT_FILENO, msg, length);
+
+    result = write (STDOUT_FILENO, msg, (unsigned int) length);
 
     for ( i = 0; i < argc; ++i )
     {
       write (STDOUT_FILENO, argv[i], strlen (argv[i]) );
       write (STDOUT_FILENO, "\n", 1);
     }
-    
+
     verify (length == result);
   }
   end ( "* -------------------- press enter ---------------------- *" );
@@ -94,7 +95,7 @@ int main(int argc, char* argv[])
   }
   end ( "* -------------------- press enter ---------------------- *" );
 
-  
+  */
   msg ( "* ------------------ create file test ------------------- *" );
   {
     int success = JUNK;
@@ -171,7 +172,6 @@ int main(int argc, char* argv[])
         result = read(id, buffer, 4);
         success = success && (result == 4);
         result = write(STDOUT_FILENO, buffer, 4);
-        
         success = success && (memcmp(buffer, verify_buffer, 4) == 0);
       }
       result = write(STDOUT_FILENO, "\n", 1);
@@ -183,7 +183,7 @@ int main(int argc, char* argv[])
     verify ( result == -1 );
   }
   end ( "* -------------------- press enter ---------------------- *" );
-
+/*
   
   msg ( "* ------------------ close file test -------------------- *" );
   {
@@ -215,7 +215,7 @@ int main(int argc, char* argv[])
     verify ( result == -1 );
   }
   end ( "* -------------------- press enter ---------------------- *" );
-
+*/
   
   msg ( "* ------------------ remove file test ------------------- *" );
   {
@@ -231,7 +231,7 @@ int main(int argc, char* argv[])
     verify ( ! success );
   }
   end ( "* -------------------- press enter ---------------------- *" );
-  
+
   printf ("To emergency exit QEMU at any time:\n");
   printf ("Hold 'Control' and press 'a' and then \n");
   printf ("release 'Control' and press 'x'\n");
@@ -295,6 +295,7 @@ int main(int argc, char* argv[])
     verify ( result == SIZE );
   }
   end ( "* -------------------- press enter ---------------------- *" );
+
   return 0;
 }
 
