@@ -97,6 +97,10 @@ struct file* flist_get_from_index(struct flist *flist, int process_id, int fd_in
   return file;
 }
 
+struct file* flist_get_from_fd(struct flist *flist, int fd_index) {
+  return flist->content[fd_index].file;
+}
+
 /**
  * A function that given an integer (obtained from above function)
  * and a process id REMOVE the file from a list. Should return NULL

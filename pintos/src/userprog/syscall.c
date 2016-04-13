@@ -278,6 +278,59 @@ syscall_handler (struct intr_frame *f)
       break;
     }
 
+    case SYS_SEEK:
+    {
+      // esp[#]
+      // 1 = int fd
+      // 2 = unsigned position
+      int fd = esp[1];
+      unsigned position = (unsigned int) esp[2];
+
+      struct file* opened_file = flist_get_from_fd(&opened_files, fd);
+      if (opened_file != NULL) {
+        file_seek(opened_file, position);
+        f->eax = (uint32_t) fd;
+      } else {
+        f->eax = (uint32_t) -1;
+      }
+
+      break;
+    }
+
+    case SYS_TELL:
+    {
+      // esp[#]
+      // 1 = int fd
+      int fd = esp[1];
+
+      struct file* opened_file = flist_get_from_fd(&opened_files, fd);
+      if (opened_file != NULL) {
+        off_t current_position = file_tell(opened_file);
+        f->eax = (uint32_t) current_position;
+      } else {
+        f->eax = (uint32_t) -1;
+      }
+
+      break;
+    }
+
+    case SYS_FILESIZE:
+    {
+      // esp[#]
+      // 1 = int fd
+      int fd = esp[1];
+
+      struct file* opened_file = flist_get_from_fd(&opened_files, fd);
+      if (opened_file != NULL) {
+        off_t filesize = file_length(opened_file);
+        f->eax = (uint32_t) filesize;
+      } else {
+        f->eax = (uint32_t) -1;
+      };
+
+      break;
+    }
+
     default:
     {
       printf ("Executed an unknown system call!\n");

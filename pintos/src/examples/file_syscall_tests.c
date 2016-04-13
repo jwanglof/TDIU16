@@ -95,7 +95,7 @@ int main(int argc, char* argv[])
   }
   end ( "* -------------------- press enter ---------------------- *" );
 
-  */
+
   msg ( "* ------------------ create file test ------------------- *" );
   {
     int success = JUNK;
@@ -183,6 +183,9 @@ int main(int argc, char* argv[])
     verify ( result == -1 );
   }
   end ( "* -------------------- press enter ---------------------- *" );
+
+  */
+
 /*
   
   msg ( "* ------------------ close file test -------------------- *" );
@@ -215,7 +218,7 @@ int main(int argc, char* argv[])
     verify ( result == -1 );
   }
   end ( "* -------------------- press enter ---------------------- *" );
-*/
+
   
   msg ( "* ------------------ remove file test ------------------- *" );
   {
@@ -237,7 +240,7 @@ int main(int argc, char* argv[])
   printf ("release 'Control' and press 'x'\n");
     
   end ( "* -------------------- press enter ---------------------- *" );
-
+*/
   
   msg ( "* ---------------- seek/tell file test ------------------ *" );
   {

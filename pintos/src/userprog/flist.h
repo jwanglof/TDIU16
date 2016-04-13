@@ -65,6 +65,7 @@ int flist_get_next_free_position(struct flist *);
 void flist_reset_position(struct flist *, int);
 int flist_insert(struct flist *, int, struct file*);
 struct file* flist_get_from_index(struct flist *, int, int);
+struct file* flist_get_from_fd(struct flist *, int);
 int flist_remove(struct flist *, int, int);
 void flist_remove_all(struct flist *, int);
 
