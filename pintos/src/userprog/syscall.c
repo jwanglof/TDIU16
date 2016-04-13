@@ -140,9 +140,9 @@ syscall_handler (struct intr_frame *f)
 
         struct file* opened_file = flist_get_from_index(&opened_files, thread_current()->tid, fd);
         if (opened_file != NULL) {
-          DBG("SYS_READ", "File is opened!");
-          off_t asd = file_read(opened_file, buffer, length);
-          f->eax = (uint32_t) asd;
+          DBG("SYS_READ", "File is opened");
+          off_t bytes_read = file_read(opened_file, buffer, length);
+          f->eax = (uint32_t) bytes_read;
         } else {
           DBG("SYS_READ", "File not opened!");
           f->eax = (uint32_t) -1;
@@ -180,8 +180,8 @@ syscall_handler (struct intr_frame *f)
         DBG("SYS_WRITE", "ELSE");
         struct file* opened_file = flist_get_from_index(&opened_files, thread_current()->tid, fd);
         if (opened_file != NULL) {
-          file_write(opened_file, buffer, length);
-          f->eax = (uint32_t) length;
+          off_t bytes_write = file_write(opened_file, buffer, length);
+          f->eax = (uint32_t) bytes_write;
         } else {
           f->eax = (uint32_t) -1;
         }
@@ -239,15 +239,17 @@ syscall_handler (struct intr_frame *f)
     {
       // esp[#]
       // 1 = int fd
+      int fd = esp[1];
 
       DBG("SYS_CLOSE", "Sys-call number: %i. ESP: %i", SYS_CLOSE, esp[0]);
-      DBG("SYS_CLOSE", "FD: %i", esp[1]);
+      DBG("SYS_CLOSE", "FD: %i", fd);
 
-      int fd = esp[1];
       struct file* opened_file = flist_get_from_index(&opened_files, thread_current()->tid, fd);
       if (opened_file != NULL) {
-        flist_remove(&opened_files, thread_current()->tid, fd);
-        file_close(opened_file);
+        int removed_fd = flist_remove(&opened_files, thread_current()->tid, fd);
+        if (removed_fd != NULL) {
+          file_close(opened_file);
+        }
       } else {
         DBG("SYS_CLOSE", "File is not opened!");
         // Eh?
