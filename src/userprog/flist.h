@@ -16,7 +16,7 @@
  * do not care for security we could pass this pointer directly to
  * user-mode code when a file is opened and expect the same pointer
  * back when the file is used in read, write or close.
- * 
+ *
  * But we do care for security, we want to:
  *
  * - Hide kernel addresses and data from (untrusted) user-mode code
@@ -27,15 +27,15 @@
  * - Verify that a file descriptor was not closed
  *
  * - Make sure the kernel can close all files associated to a process
- *   as soon as it terminate
+ *   as soon as it terminates
  *
  * This is best done by shielding kernel data from user code. Now the
  * kernel must keep track of which file descriptors a certain process
  * have open, and which kernel file pointer that are associated to
  * each file descriptor. This mapping is for you to solve, and the
- * data structure you need may be places int this file.
+ * data structure you need may be placed in this file.
  *
- * 
+ *
  * User-mode sequence                 Kernel sequence
  * ------------------                 ---------------
  *
@@ -60,7 +60,7 @@
  * This structure can be placed either globally or locally for each
  * process. If you go for a global map, consider how to remember which
  * process that opened each file. If you go for a local map, consider
- * where to declare and initialize it correct. In both cases, consider
+ * where to declare and initialize it correctly. In both cases, consider
  * what size limit that may be appropriate.
  */
 
