@@ -96,6 +96,9 @@ struct thread
 
     /* YES! You may want to add stuff. But make note of point 2 above. */
 
+  // Assign a new flist for each thread
+  struct flist flist;
+
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */

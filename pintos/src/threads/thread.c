@@ -115,6 +115,8 @@ init_thread (struct thread *t, const char *name, int priority)
   t->magic = THREAD_MAGIC;
 
   /* YES! You may want add stuff here. */
+  // Initiate a new flist
+  flist_init(&t->flist);
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.

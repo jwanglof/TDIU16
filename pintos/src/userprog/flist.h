@@ -34,40 +34,33 @@
    (probably when removed from the list(s)).
  */
 
-typedef struct asd value_t;
+typedef struct file* value_t;
 typedef int key_t;
 
-struct asd {
-  int process_id;
-  struct file* file;
-};
+//struct process_and_file {
+//  int process_id;
+//  struct file* file;
+//};
 
-/* symbolisk konstant för att lätt kunna ändra storleken
-i fortsättningen används denna då storleken behövs */
+/* symbolisk konstant för att lätt kunna ändra storleken i fortsättningen används denna då storleken behövs */
 #define MAP_SIZE 128
 #define START_POSITION 50
 struct flist
 {
   value_t content[MAP_SIZE];
-//  int next_free_position;
   bool initiated;
-  int total_files;
-//  struct flist *next;  // Points to the next value in the list
 };
-
-bool flist_is_not_full(struct flist *);
 
 bool flist_can_insert(struct flist *);
 
 void flist_init(struct flist *);
 int flist_get_next_free_position(struct flist *);
-//int flist_is_file_in_list(struct flist *, int, struct file *);
 void flist_reset_position(struct flist *, int);
-int flist_insert(struct flist *, int, struct file*);
-struct file* flist_get_from_index(struct flist *, int, int);
+int flist_insert(struct flist *, struct file*);
+struct file* flist_get_from_index(struct flist *, int);
 struct file* flist_get_from_fd(struct flist *, int);
-int flist_remove(struct flist *, int, int);
-void flist_remove_all(struct flist *, int);
+int flist_remove(struct flist *, int);
+void flist_remove_all(struct flist *);
 
 
 #endif /* userprog/flist.h */

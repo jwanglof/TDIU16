@@ -228,7 +228,10 @@ process_cleanup (void)
   int status = -1;
   
   debug("%s#%d: process_cleanup() ENTERED\n", cur->name, cur->tid);
-  
+
+  // Remove all opened files from the current process
+  flist_remove_all(&cur->flist);
+
   /* Later tests DEPEND on this output to work correct. You will have
    * to find the actual exit status in your process list. It is
    * important to do this printf BEFORE you tell the parent process

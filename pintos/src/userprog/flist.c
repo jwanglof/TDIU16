@@ -7,17 +7,10 @@
 //#define DBG(format, ...)
 
 /**
- * Returns true if the list isn't full
- */
-bool flist_is_not_full(struct flist *flist) {
-  return flist->total_files < MAP_SIZE;
-}
-
-/**
  * Returns true if the list accepts new files
  */
 bool flist_can_insert(struct flist *flist) {
-  return flist_is_not_full(flist) && flist->initiated;
+  return flist->initiated;
 }
 
 /**
@@ -30,7 +23,6 @@ void flist_init(struct flist *flist) {
     flist_reset_position(flist, position);
     position++;
   }
-  flist->total_files = 0;
   flist->initiated = true;
   DBG("flist_init - flist initiated!");
 }
@@ -46,7 +38,7 @@ int flist_get_next_free_position(struct flist *flist) {
     // The files will begin at START_POSITION in the list
     free_position = START_POSITION + position;
     // Return the first position that is free
-    if (flist->content[free_position].file == NULL) {
+    if (flist->content[free_position] == NULL) {
       break;
     }
     position++;
@@ -59,8 +51,15 @@ int flist_get_next_free_position(struct flist *flist) {
  * Sets the given index to NULL in the list
  */
 void flist_reset_position(struct flist *flist, int content_index) {
-  flist->content[content_index].file = NULL;
-  flist->content[content_index].process_id = (uint32_t) NULL;
+//  flist->content[content_index].file = NULL;
+//  flist->content[content_index].process_id = (uint32_t) NULL;
+
+  // Close the file if it is opened
+  if (flist->content[content_index] != NULL) {
+    file_close(flist->content[content_index]);
+  }
+  // "Reset" the index
+  flist->content[content_index] = NULL;
 }
 
 /**
@@ -68,14 +67,13 @@ void flist_reset_position(struct flist *flist, int content_index) {
  * and a process id INSERT this in a list of files. Return an
  * integer that can be used to find the opened file later.
  */
-int flist_insert(struct flist *flist, int process_id, struct file *file) {
+int flist_insert(struct flist *flist, struct file *file) {
   if (flist_can_insert(flist)) {
     int file_position = flist_get_next_free_position(flist);
 
-    flist->content[file_position].file = file;
-    flist->content[file_position].process_id = process_id;
-
-    flist->total_files++;
+//    flist->content[file_position].file = file;
+//    flist->content[file_position].process_id = process_id;
+    flist->content[file_position] = file;
 
     return file_position;
   }
@@ -88,17 +86,17 @@ int flist_insert(struct flist *flist, int process_id, struct file *file) {
  * the specified process did not insert the file or already removed
  * it.
  */
-struct file* flist_get_from_index(struct flist *flist, int process_id, int fd_index) {
-  struct file* file = NULL;
-  if (flist->content[fd_index].process_id == process_id) {
-    file = flist->content[fd_index].file;
-  }
-  DBG("flist_get_from_index - process_id: %i, fd_index: %i, file: %p", process_id, fd_index, file);
+struct file* flist_get_from_index(struct flist *flist, int fd_index) {
+  struct file* file = flist->content[fd_index];
+//  if (flist->content[fd_index].process_id == process_id) {
+//    file = flist->content[fd_index].file;
+//  }
+  DBG("flist_get_from_index - fd_index: %i, file: %p", fd_index, file);
   return file;
 }
 
 struct file* flist_get_from_fd(struct flist *flist, int fd_index) {
-  return flist->content[fd_index].file;
+  return flist->content[fd_index];
 }
 
 /**
@@ -107,17 +105,14 @@ struct file* flist_get_from_fd(struct flist *flist, int fd_index) {
  * if the specified process did not insert the file or already
  * removed it.
  */
-int flist_remove(struct flist *flist, int process_id, int fd_index) {
-  struct file* file = flist->content[fd_index].file;
-  int file_process_id = flist->content[fd_index].process_id;
-  if (file != NULL && file_process_id == process_id) {
-    DBG("flist_remove - process_id: %i, fd_index: %i", process_id, fd_index);
+int flist_remove(struct flist *flist, int fd_index) {
+  struct file* file = flist->content[fd_index];
+  if (file != NULL) {
+    DBG("flist_remove - fd_index: %i", fd_index);
     flist_reset_position(flist, fd_index);
-    flist->total_files--;
     return fd_index;
   }
-  DBG("flist_remove - Could not remove the file! arg process_id: %i, arg fd_index: %i, saved process_id: %i, saved file address: %p",
-      process_id, fd_index, file_process_id, file);
+  DBG("flist_remove - Could not remove the file! arg fd_index: %i, saved file address: %p", fd_index, file);
   return NULL;
 }
 
@@ -125,15 +120,10 @@ int flist_remove(struct flist *flist, int process_id, int fd_index) {
  * A function that given a process id REMOVE ALL files the specified
  * process have in the list.
  */
-void flist_remove_all(struct flist *flist, int process_id) {
+void flist_remove_all(struct flist *flist) {
   int position = 0;
-  int flist_real_position;
   while (position < MAP_SIZE) {
-    flist_real_position = START_POSITION + position;
-    if (flist->content[flist_real_position].process_id == process_id) {
-      flist_reset_position(flist, position);
-      flist->total_files--;
-    }
+    flist_reset_position(flist, position);
     position++;
   }
 }
