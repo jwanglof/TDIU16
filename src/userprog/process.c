@@ -12,6 +12,7 @@
 #include "threads/thread.h"
 #include "threads/vaddr.h"     /* PHYS_BASE */
 #include "threads/interrupt.h" /* if_ */
+#include "threads/init.h"      /* power_off() */
 
 /* Headers not yet used that you may need for various reasons. */
 #include "threads/synch.h"
