@@ -10,19 +10,15 @@
   
 /* See [8254] for hardware details of the 8254 timer chip. */
 
-#if TIMER_FREQ < 19
-#error 8254 timer requires TIMER_FREQ >= 19
-#endif
-#if TIMER_FREQ > 1000
-#error TIMER_FREQ <= 1000 recommended
-#endif
-
 /* Number of timer ticks since OS booted. */
 static int64_t ticks;
 
 /* Number of loops per timer tick.
    Initialized by timer_calibrate(). */
 static unsigned loops_per_tick;
+
+/* Interrupts per second, writen only by timer_init */
+static uint16_t TIMER_FREQ = 0;
 
 static intr_handler_func timer_interrupt;
 static bool too_many_loops (unsigned loops);
@@ -33,8 +29,13 @@ static void real_time_sleep (int64_t num, int32_t denom);
    interrupt PIT_FREQ times per second, and registers the
    corresponding interrupt. */
 void
-timer_init (void) 
+timer_init (const uint16_t timer_freq) 
 {
+  TIMER_FREQ = timer_freq;
+
+  /* 8254 timer requires TIMER_FREQ >= 19 */
+  ASSERT (TIMER_FREQ >= 19);
+  
   /* 8254 input frequency divided by TIMER_FREQ, rounded to
      nearest. */
   uint16_t count = (1193180 + TIMER_FREQ / 2) / TIMER_FREQ;
@@ -53,7 +54,14 @@ timer_calibrate (void)
   unsigned high_bit, test_bit;
 
   ASSERT (intr_get_level () == INTR_ON);
-  printf ("Calibrating timer...  ");
+  ASSERT (TIMER_FREQ >= 19);
+
+  /* klaar@ida 2016-05-03 (thanks to filst and antsu)
+   * TIMER_FREQ >  1000  => synchronization errors very rare
+   * TIMER_FREQ >  5000  => synchronization errors rare
+   * TIMER_FREQ > 10000  => frequent synch errors (good for testing)
+   */
+  printf ("Calibrating timer... ");
 
   /* Approximate loops_per_tick as the largest power-of-two
      still less than one timer tick. */
@@ -128,6 +136,7 @@ timer_nsleep (int64_t ns)
 void
 timer_print_stats (void) 
 {
+  printf ("Timer: %d interrupts per second\n", TIMER_FREQ);
   printf ("Timer: %"PRId64" ticks\n", timer_ticks ());
 }
 
@@ -174,7 +183,7 @@ busy_wait (int64_t loops)
 
 /* Sleep for approximately NUM/DENOM seconds. */
 static void
-real_time_sleep (int64_t num, int32_t denom) 
+real_time_sleep (int64_t num, int32_t denom)
 {
   /* Convert NUM/DENOM seconds into timer ticks, rounding down.
           
@@ -185,6 +194,7 @@ real_time_sleep (int64_t num, int32_t denom)
   int64_t ticks = num * TIMER_FREQ / denom;
 
   ASSERT (intr_get_level () == INTR_ON);
+  ASSERT (TIMER_FREQ >= 19);
   if (ticks > 0)
     {
       /* We're waiting for at least one full timer tick.  Use
@@ -198,7 +208,6 @@ real_time_sleep (int64_t num, int32_t denom)
          sub-tick timing.  We scale the numerator and denominator
          down by 1000 to avoid the possibility of overflow. */
       ASSERT (denom % 1000 == 0);
-      busy_wait (loops_per_tick * num / 1000 * TIMER_FREQ / (denom / 1000)); 
+      busy_wait (loops_per_tick * num / 1000 * TIMER_FREQ / (denom / 1000));
     }
 }
-

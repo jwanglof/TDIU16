@@ -48,15 +48,20 @@ static bool format_filesys;
 
 /* -q: Power off after kernel tasks complete? */
 bool power_off_when_done = false;
-/* -Q: Force power off by klaar@ida... */
+
+/* Options by klaar@ida */
+
+/* -Q: Force power off */
 bool force_off_when_done = false;
-/* -tcf: Simulate failure in thread_create klaar@ida... */
+/* -F: Set timer frequency */
+static uint16_t init_timer_freq = 1000;
+/* -tcf: Simulate failure in thread_create */
 int thread_create_limit = 0; /* infinite */
 
 static bool prevent_reqursive_off = false;
 
 static void hard_power_off (void) NO_RETURN;
-  
+
 static void ram_init (void);
 static void paging_init (void);
 
@@ -105,7 +110,7 @@ main (void)
 
   /* Initialize interrupt handlers. */
   intr_init ();
-  timer_init ();
+  timer_init (init_timer_freq);
   kbd_init ();
   input_init ();
 #ifdef USERPROG
@@ -248,6 +253,8 @@ parse_options (char **argv)
         power_off_when_done = true;
       else if (!strcmp (name, "-Q")) // klaar@ida
         power_off_when_done = force_off_when_done = true;
+      else if (!strcmp (name, "-F")) // klaar@ida
+        init_timer_freq = atoi (value);
 #ifdef FILESYS
       else if (!strcmp (name, "-f"))
         format_filesys = true;
