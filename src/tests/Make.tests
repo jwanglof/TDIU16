@@ -85,7 +85,7 @@ endif
 ifeq ($(filter vm, $(KERNEL_SUBDIRS)), vm)
 TESTCMD += --swap-disk=4
 endif
-TESTCMD += -- -q 
+TESTCMD += -- -F=10000 -q 
 TESTCMD += $(KERNELFLAGS)
 ifeq ($(filter userprog, $(KERNEL_SUBDIRS)), userprog)
 TESTCMD += -f
