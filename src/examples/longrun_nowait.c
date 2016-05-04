@@ -4,24 +4,30 @@
 
    Start a lot of processes and let them finish to test if we
    eventually run out of process slots.
- 
+
     'longrun_nowait 10 50'
- 
+
    Will call generic_parent to start 10 children 50 times (500
    processes). One slot will be used by longrun_nowait itself. 50
    slots will be used by generic_parent (they must be kept so long as
-   longrun_nowait still execute, since it may want to wait for any of
+   longrun_nowait still executes, since it may want to wait for any of
    them). All other slots needed should also be freed as soon as both
    generic_parent and it's set of children exits.
-  
+
    To run the test effectively, if you have a limit on number of
-   processes, lower that limit to 61 processes and run this test like
- 
+   processes, make sure that you have at least 100 slots in your
+   process table and run this test like
+
     'longrun_nowait 10 50'
- 
+
+   You should expect the process list to contain both dummy and
+   generic_parent. The ratio of dummy to generic_parent processes
+   should be in favor of generic_parent at most times. Otherwise
+   something is probably not as it should be.
+
    Note that some pintos tests requires at least 16 simultaneous
    processes to work, so be sure to increase the limit before running
-   pintos tests.   
+   pintos tests.
  */
 
 #include <syscall.h>
