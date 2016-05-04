@@ -1,0 +1,16 @@
+# -*- makefile -*-
+
+tests/%.output: FSDISK = 2
+tests/%.output: PUTFILES = $(filter-out os.dsk, $^)
+
+tests/filst_TESTS = $(addprefix tests/filst/,sc-bad-write)
+
+tests/filst_PROGS = $(tests/filst_TESTS) # $(addprefix tests/filst/,child-simple)
+
+tests/filst/sc-bad-write_SRC = tests/filst/sc-bad-write.c tests/main.c
+
+$(foreach prog,$(tests/filst_PROGS),$(eval $(prog)_SRC += tests/lib.c))
+
+tests/filst/read-bad-buf_PUTFILES += tests/filst/sample.txt
+tests/filst/low-mem_PUTFILES += tests/filst/child-simple
+tests/filst/exec-corrupt_PUTFILES += tests/filst/corrupt-elf
