@@ -472,7 +472,12 @@ sub run_qemu {
       if $vga eq 'terminal';
     print "warning: qemu doesn't support jitter\n"
       if defined $jitter;
-    my (@cmd) = ('qemu');
+    use File::Which qw(which where);
+    my $path = which 'qemu';
+    if ($path eq "") {
+        $path = which 'qemu-system-i386';
+    }
+    my (@cmd) = ($path);
     for my $iface (0...3) {
 	my ($option) = ('-hda', '-hdb', '-hdc', '-hdd')[$iface];
 	push (@cmd, $option, $disks_by_iface[$iface]{FILE_NAME})
