@@ -53,6 +53,10 @@ bool force_off_when_done = false;
 /* -tcf: Simulate failure in thread_create klaar@ida... */
 int thread_create_limit = 0; /* infinite */
 
+static bool prevent_reqursive_off = false;
+
+static void hard_power_off (void) NO_RETURN;
+  
 static void ram_init (void);
 static void paging_init (void);
 
@@ -369,23 +373,19 @@ usage (void)
 #endif
           );
 
-  /* klaar@ida disabled due to threads and locks not initialized
+  /* klaar@ida changed due to threads and locks not initialized
    * yet... and power_off() now use locks.
    */
-//  power_off ();
+  hard_power_off ();
 }
-
 
 /* Powers down the machine we're running on,
    as long as we're running on Bochs or QEMU. */
-void
-power_off (void) 
+static void
+hard_power_off (void) 
 {
   const char s[] = "Shutdown";
   const char *p;
-
-  printf ("# Preparing to power off...\n");
-  DEBUG_thread_poweroff_check( force_off_when_done );
 
 #ifdef FILESYS
   filesys_done ();
@@ -410,6 +410,22 @@ power_off (void)
   asm volatile ("cli; hlt" : : : "memory");
   printf ("still running...\n");
   for (;;);
+}
+
+/* Powers down the machine we're running on,
+   as long as we're running on Bochs or QEMU. */
+void
+power_off (void) 
+{
+  if ( prevent_reqursive_off )
+    hard_power_off ();
+    
+  prevent_reqursive_off = true;
+
+  printf ("# Preparing to power off...\n");
+  DEBUG_thread_poweroff_check( force_off_when_done );
+  
+  hard_power_off ();
 }
 
 /* Print statistics about Pintos execution. */
