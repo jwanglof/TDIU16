@@ -235,7 +235,7 @@ process_cleanup (void)
    * important to do this printf BEFORE you tell the parent process
    * that you exit.  (Since the parent may be the main() function,
    * that may sometimes poweroff as soon as process_wait() returns,
-   * possibly before the prontf is completed.)
+   * possibly before the printf is completed.)
    */
   printf("%s: exit(%d)\n", thread_name(), status);
   
