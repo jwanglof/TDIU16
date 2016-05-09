@@ -126,13 +126,9 @@ main (void)
   run_actions (argv);
 
   /* Finish up. */
-  printf ("# Finishing up!");
-  if (power_off_when_done) {
-    printf ("# power_off_when_done");
+  if (power_off_when_done)
     power_off ();
-  }
-
-  printf ("# thread_exit()");
+  
   thread_exit ();
 }
 

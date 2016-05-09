@@ -11,6 +11,10 @@ int process_wait (tid_t);
 void process_cleanup (void);
 void process_activate (void);
 
+bool exists_in(char, const char*);
+int count_args(const char*, const char*);
+void* setup_main_stack(const char*, void*);
+
 /* This is unacceptable solutions. */
 #define INFINITE_WAIT() for ( ; ; ) thread_yield()
 #define BUSY_WAIT(n)       \
