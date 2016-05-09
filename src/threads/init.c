@@ -371,6 +371,7 @@ usage (void)
           "  -Q                 Power off VM after actions or on panic.\n"
           "  -q                 Force off VM after actions or on panic.\n"
           "  -f                 Format file system disk during startup.\n"
+          "  -F=COUNT           Interrupts per second [20-60000].\n"
           "  -rs=SEED           Set random number seed to SEED.\n"
           "  -mlfqs             Use multi-level feedback queue scheduler.\n"
 #ifdef USERPROG
