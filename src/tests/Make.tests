@@ -85,7 +85,12 @@ endif
 ifeq ($(filter vm, $(KERNEL_SUBDIRS)), vm)
 TESTCMD += --swap-disk=4
 endif
-TESTCMD += -- -F=10000 -q 
+TESTCMD += -- -q 
+# klaar@ida 2016-05: new kernel flag
+ifeq ($(filter -F=%, $(KERNELFLAGS)),)
+# BUG: Why is this not filtered out?
+TESTCMD += -F=10000
+endif
 TESTCMD += $(KERNELFLAGS)
 ifeq ($(filter userprog, $(KERNEL_SUBDIRS)), userprog)
 TESTCMD += -f
