@@ -252,7 +252,7 @@ void process_print_list()
 struct parameters_to_start_process
 {
   char* command_line;
-//  bool success;
+  bool success;
 };
 
 static void
@@ -283,7 +283,7 @@ process_execute (const char *command_line)
   /* COPY command line out of parent process memory */
   arguments.command_line = malloc(command_line_size);
   strlcpy(arguments.command_line, command_line, command_line_size);
-//  arguments.success = false;
+  arguments.success = false;
 
 
   strlcpy_first_word (debug_name, command_line, 64);
@@ -307,11 +307,11 @@ process_execute (const char *command_line)
         command_line);
 
 
-//  debug("%s#%d: process_execute(\"%s\") SUCCESS: %i\n",
-//        thread_current()->name,
-//        thread_current()->tid,
-//        command_line,
-//        arguments.success);
+  debug("%s#%d: process_execute(\"%s\") SUCCESS: %i\n",
+        thread_current()->name,
+        thread_current()->tid,
+        command_line,
+        arguments.success);
 
   /* AVOID bad stuff by turning off. YOU will fix this! */
 //  power_off();
@@ -321,18 +321,18 @@ process_execute (const char *command_line)
   free(arguments.command_line);
 
   /* MUST be -1 if `load' in `start_process' return false */
-//  if (!arguments.success) {
-//    process_id = -1;
-//    debug("%s#%d: process_execute(\"%s\") RETURNS %d\n",
-//          thread_current()->name,
-//          thread_current()->tid,
-//          command_line, process_id);
-//  } else {
-//    debug("%s#%d: process_execute(\"%s\") RETURNS %d\n",
-//          thread_current()->name,
-//          thread_current()->tid,
-//          command_line, process_id);
-//  }
+  if (!arguments.success) {
+    process_id = -1;
+    debug("%s#%d: process_execute(\"%s\") RETURNS %d\n",
+          thread_current()->name,
+          thread_current()->tid,
+          command_line, process_id);
+  } else {
+    debug("%s#%d: process_execute(\"%s\") RETURNS %d\n",
+          thread_current()->name,
+          thread_current()->tid,
+          command_line, process_id);
+  }
   return process_id;
 }
 
@@ -366,7 +366,7 @@ start_process (struct parameters_to_start_process* parameters)
         thread_current()->tid,
         success);
 
-//  parameters->success = success;
+  parameters->success = success;
 
   if (success)
   {

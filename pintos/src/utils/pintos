@@ -35,7 +35,7 @@ run_vm ();
 finish_scratch_disk ();
 
 exit 0;
-
+
 # Parses the command line.
 sub parse_command_line {
     usage (0) if @ARGV == 0 || (@ARGV == 1 && $ARGV[0] eq '--help');
@@ -201,7 +201,7 @@ sub set_as {
       if defined $as_ref->[1];
     $as_ref->[1] = $as;
 }
-
+
 # Locates the files used to back each of the virtual disks,
 # and creates temporary disks.
 sub find_disks {
@@ -249,7 +249,7 @@ sub find_disks {
 	}
     }
 }
-
+
 # Prepare the scratch disk for gets and puts.
 sub prepare_scratch_disk {
     # Copy the files to put onto the scratch disk.
@@ -340,7 +340,7 @@ sub get_scratch_file {
 
     return 1;
 }
-
+
 # Prepares the arguments to pass to the Pintos kernel,
 # and then write them into Pintos bootloader.
 sub prepare_arguments {
@@ -369,7 +369,7 @@ sub write_cmd_line {
     sysseek ($handle, 0x17a, 0) == 0x17a or die "$file_name: seek: $!\n";
     syswrite ($handle, "$arg_cnt$args") or die "$file_name: write: $!\n";
 }
-
+
 # Running simulators.
 
 # Runs the selected simulator.
@@ -591,7 +591,7 @@ EOF
     print join (' ', @cmd), "\n";
     xsystem (@cmd);
 }
-
+
 # Disk utilities.
 
 # open_disk($disk)
@@ -701,7 +701,7 @@ sub write_fully {
     die "$file_name: write: $!\n" if !defined $written_bytes;
     die "$file_name: short write\n" if $written_bytes != length $data;
 }
-
+
 # Subprocess utilities.
 
 # run_command(@args)

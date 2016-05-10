@@ -39,7 +39,7 @@ filesys_done (void)
 {
   free_map_close ();
 }
-
+
 /* Creates a file named NAME with the given INITIAL_SIZE.
    Returns true if successful, false otherwise.
    Fails if a file named NAME already exists,
@@ -77,6 +77,8 @@ filesys_open (const char *name)
   dir_close (dir);
 
   file = file_open (inode);
+
+  printf("\n# IIIIIIII --- %i --- %p \n", file == NULL, file);
   
   return file;
 }

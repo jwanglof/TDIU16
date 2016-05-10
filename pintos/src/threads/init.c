@@ -131,7 +131,7 @@ main (void)
   
   thread_exit ();
 }
-
+
 /* Clear BSS and obtain RAM size from loader. */
 static void
 ram_init (void) 

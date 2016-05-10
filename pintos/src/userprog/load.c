@@ -99,6 +99,9 @@ load (const char *file_name, void (**eip) (void), void **esp)
   t->pagedir = pagedir_create ();
   if (t->pagedir == NULL) 
     goto done;
+
+  printf("# LOL\n");
+
   process_activate ();
 
   /* Set up stack. */
@@ -106,8 +109,12 @@ load (const char *file_name, void (**eip) (void), void **esp)
     goto done;
   }
 
+  printf("# LOL 222\n");
+
   /* Open executable file. */
   file = filesys_open (file_name);
+
+  printf("\n# FILESYSOPEN %i --- %p\n", file == NULL, file);
   if (file == NULL) 
     {
       printf ("load: %s: open failed\n", file_name);
@@ -196,7 +203,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
   file_close (file);
   return success;
 }
-
+
 /* load() helpers. */
 
 static bool install_page (void *upage, void *kpage, bool writable);
