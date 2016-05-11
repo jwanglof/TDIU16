@@ -78,8 +78,6 @@ filesys_open (const char *name)
 
   file = file_open (inode);
 
-  printf("\n# IIIIIIII --- %i --- %p \n", file == NULL, file);
-  
   return file;
 }
 

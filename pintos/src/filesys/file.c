@@ -21,13 +21,10 @@ file_open (struct inode *inode)
     {
       file->inode = inode;
       file->pos = 0;
-      debug("DDDDDDD -- %i --- %p \n", file == NULL, file);
-
       return file;
     }
   else
     {
-      debug("EEEEEEEE -- FILE: %i ---- INODE: %i --- %p\n", file == NULL, inode == NULL, file);
       inode_close (inode);
       free (file);
       return NULL; 

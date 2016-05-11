@@ -112,26 +112,26 @@ void* setup_main_stack(const char* command_line, void* stack_top)
   char* ptr_save;
   int i = 0;
 
-  debug("# command_line = %s\n", command_line);
+  debug("command_line = %s\n", command_line);
 
 
   /* calculate the bytes needed to store the command_line */
   // Add one for the last \0
   line_size = strlen(command_line) + 1;
-  debug("# line_size = %d\n", line_size);
+  debug("line_size = %d\n", line_size);
 
   /* round up to make it even divisible by 4 */
   int alignment = line_size % 4;  // plus % 4
-  debug("# alignment = %d\n", alignment);
+  debug("alignment = %d\n", alignment);
   if (alignment > 0) {
     alignment = 4 - alignment;
   }
   line_size += alignment;
-  debug("# line_size (aligned) = %d\n", line_size);
+  debug("line_size (aligned) = %d\n", line_size);
 
   /* calculate how many words the command_line contain */
   argc = count_args(command_line, " ");
-  debug("# argc = %d\n", argc);
+  debug("argc = %d\n", argc);
 
   /* calculate the size needed on our simulated stack */
 //  total_size = line_size;  // argc-total-length-size
@@ -144,14 +144,14 @@ void* setup_main_stack(const char* command_line, void* stack_top)
   // sizeof(char*) gives exact byte of a char* (4 byte)
   // (argc + 1) the amount of argc's plus program name
   total_size = line_size + sizeof(struct main_args) + sizeof(char*) * (argc + 1);
-  debug("# total_size = %d\n", total_size);
+  debug("total_size = %d\n", total_size);
 
   /* calculate where the final stack top will be located */
   // Need to cast since stack_top is an address
   esp = (struct main_args*) ((unsigned)stack_top - total_size);
 
-  debug("# esp: %p\n", (void*)esp);
-  debug("# stack_top: %p\n", stack_top);
+  debug("esp: %p\n", (void*)esp);
+  debug("stack_top: %p\n", stack_top);
 
   /*
    *
@@ -167,12 +167,12 @@ void* setup_main_stack(const char* command_line, void* stack_top)
 //  esp->ret = esp - 4 ;  //??
   //void (*ret)(void);
   esp->ret = NULL;
-  debug("# esp->ret: %i\n", (int)esp->ret);
+  debug("esp->ret: %i\n", (int)esp->ret);
 
   /* Just a normal integer. */
   //int argc;
   esp->argc = argc ;
-  debug("# esp->argc: %i\n", esp->argc);
+  debug("esp->argc: %i\n", esp->argc);
 
   /* calculate where in the memory the argv array starts */
   /* Variable "argv" that stores address to an address storing char.
@@ -183,12 +183,12 @@ void* setup_main_stack(const char* command_line, void* stack_top)
   // + 12 since we need to take into the account that the return-address, argc, and char** argv is at the bottom of the stack
 //  esp->argv = (char **) ((unsigned)esp + 12);
   esp->argv = (char **) ((unsigned)esp + sizeof(struct main_args));
-  debug("# esp->argv: %p\n", *esp->argv);
+  debug("esp->argv: %p\n", *esp->argv);
 
   /* calculate where in the memory the words is stored */
 //  cmd_line_on_stack = (char *) ((unsigned)esp + (argc * 4) + 12 + 4);
   cmd_line_on_stack = (char *) ((unsigned)stack_top - line_size);
-  debug("# cmd_line_on_stack: %p\n", cmd_line_on_stack);
+  debug("cmd_line_on_stack: %p\n", cmd_line_on_stack);
 
 //  /* copy the command_line to where it should be in the stack */
 ////  strncpy((char*)((unsigned) stack_top - line_size), command_line, strlen(command_line));
@@ -211,6 +211,8 @@ void* setup_main_stack(const char* command_line, void* stack_top)
     int token_size = strlen(token) + 1;
     // Copy it into the stack
     strlcpy(cmd_line_on_stack, token, token_size);
+
+    debug("token_size: %i --- token: %s\n", token_size, cmd_line_on_stack);
 
     // Set the i:th argv's to the word-address
     esp->argv[i] = cmd_line_on_stack;
@@ -253,6 +255,8 @@ struct parameters_to_start_process
 {
   char* command_line;
   bool success;
+  struct semaphore sema;
+  struct lock lock;
 };
 
 static void
@@ -283,29 +287,50 @@ process_execute (const char *command_line)
   /* COPY command line out of parent process memory */
   arguments.command_line = malloc(command_line_size);
   strlcpy(arguments.command_line, command_line, command_line_size);
+
+  // Set success to false as default
   arguments.success = false;
-
-
-  strlcpy_first_word (debug_name, command_line, 64);
-  
-  /* SCHEDULES function `start_process' to run (LATER) */
-  thread_id = thread_create (debug_name, PRI_DEFAULT,
-                             (thread_func*)start_process, &arguments);
-
-
-  debug("%s#%d: process_execute(\"%s\") THREAD ID: %i\n",
-        thread_current()->name,
-        thread_current()->tid,
-        command_line,
-        thread_id);
-
-  process_id = thread_id;
+  // Initiate a semaphore without resources so we can pause until start_process() is done
+  sema_init(&arguments.sema, 0);
+  // Initiate the lock
+  // TODO Do I need a lock?
+  lock_init(&arguments.lock);
 
   debug("%s#%d: process_execute(\"%s\") ENTERED\n",
         thread_current()->name,
         thread_current()->tid,
         command_line);
 
+  strlcpy_first_word (debug_name, command_line, 64);
+
+//  lock_acquire(&arguments.lock);
+  debug("%s#%d: process_execute(\"%s\") ENTERED 1\n",
+        thread_current()->name,
+        thread_current()->tid,
+        command_line);
+
+  /* SCHEDULES function `start_process' to run (LATER) */
+  thread_id = thread_create (debug_name, PRI_DEFAULT,
+                             (thread_func*)start_process, &arguments);
+  debug("%s#%d: process_execute(\"%s\") ENTERED 2\n",
+        thread_current()->name,
+        thread_current()->tid,
+        command_line);
+  debug("%s#%d: process_execute(\"%s\") THREAD ID: %i\n",
+        thread_current()->name,
+        thread_current()->tid,
+        command_line,
+        thread_id);
+
+  // Count down the semaphore so we wait until start_process() is done
+  // If thread_id is -1 we weren't able to create a thread for some reason (e.g. if giving -tcl=2 as argument to PintOS)
+  if (thread_id != -1) {
+    sema_down(&arguments.sema);
+  }
+
+//  lock_release(&arguments.lock);
+
+  process_id = thread_id;
 
   debug("%s#%d: process_execute(\"%s\") SUCCESS: %i\n",
         thread_current()->name,
@@ -323,7 +348,7 @@ process_execute (const char *command_line)
   /* MUST be -1 if `load' in `start_process' return false */
   if (!arguments.success) {
     process_id = -1;
-    debug("%s#%d: process_execute(\"%s\") RETURNS %d\n",
+    debug("%s#%d: process_execute(\"%s\") FAILED %d\n",
           thread_current()->name,
           thread_current()->tid,
           command_line, process_id);
@@ -341,6 +366,10 @@ process_execute (const char *command_line)
 static void
 start_process (struct parameters_to_start_process* parameters)
 {
+  // Acquire the lock so the process doesn't continue until it is finished
+//  lock_acquire(&parameters->lock);
+//  sema_down(&parameters->sema);
+
   /* The last argument passed to thread_create is received here... */
   struct intr_frame if_;
   bool success;
@@ -352,7 +381,7 @@ start_process (struct parameters_to_start_process* parameters)
         thread_current()->name,
         thread_current()->tid,
         parameters->command_line);
-  
+
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
@@ -392,23 +421,28 @@ start_process (struct parameters_to_start_process* parameters)
 
   }
 
-  debug("%s#%d: start_process(\"%s\") DONE\n",
+  debug("%s#%d: start_process(\"%s\") DONE - SUCCESS: %i\n",
         thread_current()->name,
         thread_current()->tid,
-        parameters->command_line);
-  
+        parameters->command_line,
+        parameters->success);
+
   
   /* If load fail, quit. Load may fail for several reasons.
      Some simple examples:
-     - File doeas not exist
+     - File does not exist
      - File do not contain a valid program
      - Not enough memory
   */
+//  lock_release(&parameters->lock);
+
+  // Count up the semaphore to release the "lock"
+  sema_up(&parameters->sema);
   if ( ! success )
   {
     thread_exit ();
   }
-  
+
   /* Start the user process by simulating a return from an interrupt,
      implemented by intr_exit (in threads/intr-stubs.S). Because
      intr_exit takes all of its arguments on the stack in the form of

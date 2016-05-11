@@ -64,7 +64,7 @@ syscall_handler (struct intr_frame *f)
 
     case SYS_HALT:
     {
-//      DBG("SYS_HALT", "Sys-call number: %i. ESP: %i", SYS_HALT, esp[0]);
+      DBG("SYS_HALT", "Sys-call number: %i. ESP: %i", SYS_HALT, esp[0]);
       power_off();
     }
 
