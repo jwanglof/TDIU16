@@ -1,0 +1,183 @@
+#include <stdio.h>
+//#include <string.h>
+//#include <syscall-nr.h>
+
+#include <syscall.h>
+#include <stdarg.h>
+
+int mystrlen(char *str);
+
+void mysprintf(char *sbuf, char *str, ...);
+
+int main(void)
+{  
+  char *descr = "This is test program v0.1 that tests your implementation of lab 2 in TDDB68/72\n";
+  char *test1 = "The first test is to create three files.\n";
+  char *test2 = "Now lets write some data to the files. Write some binary data to some files.\n";
+  char *test3 = "Test string that is written to a file.\n";
+  char *test4 = "Test to read back data from files.\n";
+  char *test5 = "Test to read from and write to arbitrary file handles.\n";
+  char *test6 = "Get data from console. Please, write something (10 characters).\n";
+  char *test7 = "Test to open a file that does not exist.\n";
+  //char binarydata[] = {1,2,3,4,5,0,1,2,3,4};
+  char binarydata[10];
+  char sbuf[50];
+  int file[3];
+  int readNum, i;
+
+  // verkar vara något fel med fördefinerade variablar.. tex char buf[10] = {0} ger oxå samma fel
+  binarydata[0] = 1;
+  binarydata[1] = 2;
+  binarydata[2] = 3;
+  binarydata[3] = 4;
+  binarydata[4] = 5;
+  binarydata[5] = 0;
+  binarydata[6] = 1;
+  binarydata[7] = 2;
+  binarydata[8] = 3;
+  binarydata[9] = 4;
+
+  write(STDOUT_FILENO, descr, mystrlen(descr));
+  write(STDOUT_FILENO, test1, mystrlen(test1));
+  if (!create("test0", mystrlen(test3))) {
+    mysprintf(sbuf, "Could not create test0\n");
+    write(STDOUT_FILENO, sbuf, mystrlen(sbuf));
+    halt();
+  }
+  if (!create("test1", 1024)){
+    mysprintf(sbuf, "Could not create test1\n");
+    write(STDOUT_FILENO, sbuf, mystrlen(sbuf));
+    halt();
+  }
+  if (!create("test2", 1024)){
+    mysprintf(sbuf, "Could not create test1\n");
+    write(STDOUT_FILENO, sbuf, mystrlen(sbuf));
+    halt();
+  }
+	
+  for(i = 0; i < 2; i++){
+    mysprintf(sbuf, "test%d", i);
+    file[i] = open(sbuf);
+    if(file[i] > 1){
+      mysprintf(sbuf, "Could open test%d\n", i);
+      write(STDOUT_FILENO, sbuf, mystrlen(sbuf));
+    }
+    else{
+      mysprintf(sbuf, "Could not open test%d\n", i);
+      write(STDOUT_FILENO, sbuf, mystrlen(sbuf));
+      halt();
+    }
+  }
+	
+  write(STDOUT_FILENO, test6, mystrlen(test6));
+  readNum = read(STDIN_FILENO, sbuf, 10);
+  if(readNum != 10){
+    mysprintf(sbuf, "Did not read 10 characters from the console.\n");
+    write(STDOUT_FILENO, sbuf, mystrlen(sbuf));
+    halt();
+  }
+	
+  write(STDOUT_FILENO, test2, mystrlen(test2));
+  write(file[0], test3, mystrlen(test3));
+  write(file[1], binarydata, 10);
+	
+  write(STDOUT_FILENO, test4, mystrlen(test4));
+  close(file[0]);
+  file[0] = open("test0");
+  readNum = read(file[0], sbuf, 40); // lite konstigt test..
+  if(readNum != mystrlen(test3)){ // test4?, bara tur att sbuf[39+] = 0
+    mysprintf(sbuf, "Could not read back from test0 (%d),  %d characters read instead!\n", mystrlen(test3), readNum);
+    write(STDOUT_FILENO, sbuf, mystrlen(sbuf));
+    halt();
+  }
+  close(file[1]);
+  file[1] = open("test1");
+  readNum = read(file[1], sbuf, 10);
+  if(readNum != 10){
+    mysprintf(sbuf, "Could not read back binary data from test1\n");
+    write(STDOUT_FILENO, sbuf, mystrlen(sbuf));
+    halt();
+  }
+	
+  write(STDOUT_FILENO, test5, mystrlen(test5));
+  write(87, "hej", 3);
+  readNum = read(1006, sbuf, 3);
+  if(readNum != -1){
+    mysprintf(sbuf, "Your should catch that I tried to read from file 1006\n");
+    write(STDOUT_FILENO, sbuf, mystrlen(sbuf));
+  }
+  else{
+    mysprintf(sbuf, "Good, you noted that I tried to read, wrongly, from the file 1006\n");
+    write(STDOUT_FILENO, sbuf, mystrlen(sbuf));
+  }
+	
+  write(STDOUT_FILENO, test7, mystrlen(test7));
+  file[2] = open("fdsfa");
+  if(file[2] > 1){
+    mysprintf(sbuf, "We got a valid file handle!\n");
+    write(STDOUT_FILENO, sbuf, mystrlen(sbuf));
+    halt();
+  } else {
+    mysprintf(sbuf, "PASSED!\n");
+    write(STDOUT_FILENO, sbuf, mystrlen(sbuf));
+  }
+  halt();
+}
+
+int mystrlen(char *str)
+{
+  int len = 0;
+  while(*str != '\0'){
+    len++;
+    str++;
+  }
+  return len;
+}
+
+void mysprintf(char *sbuf, char *str, ...)
+{
+  int j;
+  char buffer[15];
+  int ival;
+  va_list ap;
+  va_start(ap, str);
+	
+	
+  for(; *str != '\0';){
+    if(*str == '%'){
+      str++;
+      switch(*str){
+      case 'd':
+	ival = va_arg(ap, int);
+	if(ival == 0){
+	  *sbuf = '0';
+	  sbuf++;
+	}
+	else{
+	  for(j = 14; ival > 0; j--){
+	    buffer[j] = ival % 10 + '0';
+	    ival /= 10;
+	  }
+	  j++;
+	  for(;j < 15;){
+	    *sbuf = buffer[j];
+	    sbuf++;
+	    j++;
+	  }
+	}
+	str++;
+	break;
+      case 's':
+	break;
+      default:
+	break;
+      }
+    }
+    else{
+      *sbuf = *str;
+      sbuf++;
+      str++;
+    }
+  }
+  *sbuf = '\0';
+}
