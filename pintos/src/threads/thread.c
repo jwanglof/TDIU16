@@ -117,6 +117,7 @@ init_thread (struct thread *t, const char *name, int priority)
   /* YES! You may want add stuff here. */
   // Initiate a new flist
   flist_init(&t->flist);
+//  plist_change_position_exit_status()
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -226,7 +227,7 @@ thread_create (const char *name, int priority,
   DEBUG_thread_count_up();
   thread_unblock (t);
 
-  debug("%s#%d: thread_create(\"%s\", ...) RETURNS %d\n",
+  debug("%s#%d: thread_create(\"%s\", ...) RETURNS THREAD ID: %d\n",
         thread_current()->name,
         thread_current()->tid,
         name, tid);

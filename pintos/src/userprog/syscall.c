@@ -9,6 +9,7 @@
 #include <lib/kernel/stdio.h>
 #include <lib/user/syscall.h>
 #include <filesys/inode.h>
+#include <devices/timer.h>
 #include "filesys/filesys.h"
 #include "filesys/file.h"
 #include "threads/vaddr.h"
@@ -16,9 +17,11 @@
 #include "userprog/pagedir.h"
 #include "userprog/process.h"
 #include "devices/input.h"
+#include "plist.h"
 
 #define DBG(sys_call, format, ...) printf("# DEBUG: " sys_call " -- " format "\n", ##__VA_ARGS__)
 //#define DBG(format, ...)
+#define DBG_CURR(sys_call, format, ...) printf("# DEBUG CURRENT: " sys_call " -- " format "\n", ##__VA_ARGS__)
 
 static void syscall_handler (struct intr_frame *);
 
@@ -70,6 +73,8 @@ syscall_handler (struct intr_frame *f)
 
     case SYS_EXIT:
     {
+      // esp[#]
+      // 1 = int status
       /**
        * Frågor och svar från uppgiften:
        * 1) Vilka funktioner är involverade i att avsluta en tråd? En process?
@@ -91,10 +96,11 @@ syscall_handler (struct intr_frame *f)
        * 7) Vad händer när main returnerar?
        *    Svar: Processorna fortsätter exekvera från återhoppsadressen och stackpekaren räknas upp för att komma tillbaka till ursprungsläget
        */
+      int status = esp[1];
+
       DBG("SYS_EXIT", "Sys-call number: %i. ESP: %i", SYS_EXIT, esp[0]);
       DBG("SYS_EXIT", "Status: %i", esp[1]);
-      thread_exit();
-//      process_exit(esp[1]);
+      process_exit(status);
     }
 
     case SYS_READ:
@@ -168,7 +174,6 @@ syscall_handler (struct intr_frame *f)
       } else if (fd == STDOUT_FILENO) {
         DBG("SYS_WRITE", "Writing to monitor! Length: %i", length);
         putbuf(buffer, length);
-//        printf("\n"); // TODO DBG
         DBG("SYS_WRITE", "DONE writing to monitor!");
         f->eax = (uint32_t) length;
       } else {
@@ -327,13 +332,73 @@ syscall_handler (struct intr_frame *f)
       break;
     }
 
+    case SYS_SLEEP:
+    {
+      // esp[#]
+      // 1 = int millis
+      int millis = esp[1];
+
+      DBG("SYS_SLEEP", "Sys-call number: %i. ESP: %i", SYS_SLEEP, esp[0]);
+      DBG("SYS_SLEEP", "Millis: %i", millis);
+
+      timer_msleep(millis);
+
+      break;
+    }
+
+    case SYS_PLIST:
+    {
+      // esp[#]
+
+      DBG("SYS_PLIST", "Sys-call number: %i. ESP: %i", SYS_PLIST, esp[0]);
+
+      plist_print(p_list);
+
+      break;
+    }
+
+    case SYS_EXEC:
+    {
+      // esp[#]
+      // 1 = const char *file (command_line)
+      const char *file = (const char*) esp[1];
+
+      DBG("SYS_EXEC", "Sys-call number: %i. ESP: %i", SYS_EXEC, esp[0]);
+      DBG("SYS_EXEC", "File: %s", file);
+
+      int process_id = process_execute(file);
+      f->eax = (uint32_t) process_id;
+
+      break;
+    }
+
+    case SYS_WAIT:
+    {
+      // esp[#]
+      // 1 = pid_t id
+      pid_t child_id = esp[1];
+
+      DBG_CURR("SYS_WAIT", "Sys-call number: %i. ESP: %i", SYS_WAIT, esp[0]);
+      DBG_CURR("SYS_WAIT", "Child ID: %d", child_id);
+
+      int status = process_wait(child_id);
+
+      DBG_CURR("SYS_WAIT", "Status: %d", status);
+
+
+      f->eax = (uint32_t) status;
+      break;
+    }
+
     default:
     {
       printf ("Executed an unknown system call!\n");
       
       printf ("Stack top + 0: %d\n", esp[0]);
       printf ("Stack top + 1: %d\n", esp[1]);
-      
+      printf ("Stack top + 2: %d\n", esp[2]);
+      printf ("Stack top + 3: %d\n", esp[3]);
+
       thread_exit ();
     }
   }

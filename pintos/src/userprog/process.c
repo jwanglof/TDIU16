@@ -24,6 +24,10 @@
 /* HACK defines code you must remove and implement in a proper way */
 #define HACK
 
+//#define MAIN_STACK_DBG(format, ...) printf("# MAIN STACK DEBUG: " format "\n", ##__VA_ARGS__)
+#define MAIN_STACK_DBG(format, ...)
+
+
 
 /* Return true if 'c' is fount in the c-string 'd'
  * NOTE: 'd' must be a '\0'-terminated c-string
@@ -112,26 +116,26 @@ void* setup_main_stack(const char* command_line, void* stack_top)
   char* ptr_save;
   int i = 0;
 
-  debug("command_line = %s\n", command_line);
+  MAIN_STACK_DBG("command_line = %s\n", command_line);
 
 
   /* calculate the bytes needed to store the command_line */
   // Add one for the last \0
   line_size = strlen(command_line) + 1;
-  debug("line_size = %d\n", line_size);
+  MAIN_STACK_DBG("line_size = %d\n", line_size);
 
   /* round up to make it even divisible by 4 */
   int alignment = line_size % 4;  // plus % 4
-  debug("alignment = %d\n", alignment);
+  MAIN_STACK_DBG("alignment = %d\n", alignment);
   if (alignment > 0) {
     alignment = 4 - alignment;
   }
   line_size += alignment;
-  debug("line_size (aligned) = %d\n", line_size);
+  MAIN_STACK_DBG("line_size (aligned) = %d\n", line_size);
 
   /* calculate how many words the command_line contain */
   argc = count_args(command_line, " ");
-  debug("argc = %d\n", argc);
+  MAIN_STACK_DBG("argc = %d\n", argc);
 
   /* calculate the size needed on our simulated stack */
 //  total_size = line_size;  // argc-total-length-size
@@ -144,14 +148,14 @@ void* setup_main_stack(const char* command_line, void* stack_top)
   // sizeof(char*) gives exact byte of a char* (4 byte)
   // (argc + 1) the amount of argc's plus program name
   total_size = line_size + sizeof(struct main_args) + sizeof(char*) * (argc + 1);
-  debug("total_size = %d\n", total_size);
+  MAIN_STACK_DBG("total_size = %d\n", total_size);
 
   /* calculate where the final stack top will be located */
   // Need to cast since stack_top is an address
   esp = (struct main_args*) ((unsigned)stack_top - total_size);
 
-  debug("esp: %p\n", (void*)esp);
-  debug("stack_top: %p\n", stack_top);
+  MAIN_STACK_DBG("esp: %p\n", (void*)esp);
+  MAIN_STACK_DBG("stack_top: %p\n", stack_top);
 
   /*
    *
@@ -167,12 +171,12 @@ void* setup_main_stack(const char* command_line, void* stack_top)
 //  esp->ret = esp - 4 ;  //??
   //void (*ret)(void);
   esp->ret = NULL;
-  debug("esp->ret: %i\n", (int)esp->ret);
+  MAIN_STACK_DBG("esp->ret: %i\n", (int)esp->ret);
 
   /* Just a normal integer. */
   //int argc;
   esp->argc = argc ;
-  debug("esp->argc: %i\n", esp->argc);
+  MAIN_STACK_DBG("esp->argc: %i\n", esp->argc);
 
   /* calculate where in the memory the argv array starts */
   /* Variable "argv" that stores address to an address storing char.
@@ -183,12 +187,12 @@ void* setup_main_stack(const char* command_line, void* stack_top)
   // + 12 since we need to take into the account that the return-address, argc, and char** argv is at the bottom of the stack
 //  esp->argv = (char **) ((unsigned)esp + 12);
   esp->argv = (char **) ((unsigned)esp + sizeof(struct main_args));
-  debug("esp->argv: %p\n", *esp->argv);
+  MAIN_STACK_DBG("esp->argv: %p\n", *esp->argv);
 
   /* calculate where in the memory the words is stored */
 //  cmd_line_on_stack = (char *) ((unsigned)esp + (argc * 4) + 12 + 4);
   cmd_line_on_stack = (char *) ((unsigned)stack_top - line_size);
-  debug("cmd_line_on_stack: %p\n", cmd_line_on_stack);
+  MAIN_STACK_DBG("cmd_line_on_stack: %p\n", cmd_line_on_stack);
 
 //  /* copy the command_line to where it should be in the stack */
 ////  strncpy((char*)((unsigned) stack_top - line_size), command_line, strlen(command_line));
@@ -198,7 +202,7 @@ void* setup_main_stack(const char* command_line, void* stack_top)
 //  char *token = 0;
 //  for (token = strtok_r((char *) command_line, " ", &ptr_save); token != NULL; token = strtok_r(NULL, " ", &ptr_save)) {
 ////  for (token = strtok_r(cmd_line_on_stack, " \n", &ptr_save); token != NULL; token = strtok_r(NULL, " \n", &ptr_save)) {
-//    debug("# %i --- %s\n", i, token);
+//    MAIN_STACK_DBG("# %i --- %s\n", i, token);
 //    esp->argv[i] = token;
 //    i++;
 //  }
@@ -212,7 +216,7 @@ void* setup_main_stack(const char* command_line, void* stack_top)
     // Copy it into the stack
     strlcpy(cmd_line_on_stack, token, token_size);
 
-    debug("token_size: %i --- token: %s\n", token_size, cmd_line_on_stack);
+    MAIN_STACK_DBG("token_size: %i --- token: %s\n", token_size, cmd_line_on_stack);
 
     // Set the i:th argv's to the word-address
     esp->argv[i] = cmd_line_on_stack;
@@ -233,6 +237,10 @@ void* setup_main_stack(const char* command_line, void* stack_top)
  * the process subsystem. */
 void process_init(void)
 {
+  plist_init(p_list);
+  cond_init(&p_cond);
+//  sema_init(&p_list_sema, 1);
+  debug("PROCESS INIT DONE");
 }
 
 /* This function is currently never called. As thread_exit does not
@@ -240,14 +248,27 @@ void process_init(void)
  * instead. Note however that all cleanup after a process must be done
  * in process_cleanup, and that process_cleanup are already called
  * from thread_exit - do not call cleanup twice! */
-void process_exit(int status UNUSED)
+void process_exit(int status UNUSED)  // TODO ASK: What does UNUSED do? tldr plz
+//void process_exit(int status)
 {
+//  struct plist_info *current_plist_entry = plist_get(p_list, thread_current()->plist_position);
+//  if (current_plist_entry != NULL) {
+//    current_plist_entry->exit_status = status;
+  debug("%s#%d: process_exit ENTERED\n",
+        thread_current()->name,
+        thread_current()->tid);
+    plist_change_position_exit_status(p_list, thread_current()->plist_position, status);
+    thread_exit();
+//  } else {
+//    debug("EPIC FAIL!!!!!");
+//  }
 }
 
 /* Print a list of all running processes. The list shall include all
  * relevant debug information in a clean, readable format. */
 void process_print_list()
 {
+  debug("\n\nLOOOOOOOOOOOOL GAAAAAAAAAAAAAAAAY\n\n");
 }
 
 
@@ -257,6 +278,7 @@ struct parameters_to_start_process
   bool success;
   struct semaphore sema;
   struct lock lock;
+  int process_parent_id;
 };
 
 static void
@@ -296,26 +318,17 @@ process_execute (const char *command_line)
   // TODO Do I need a lock?
   lock_init(&arguments.lock);
 
-  debug("%s#%d: process_execute(\"%s\") ENTERED\n",
-        thread_current()->name,
-        thread_current()->tid,
-        command_line);
+  // Add the parent process ID to the arguments so it can be used in start_process
+  arguments.process_parent_id = thread_current()->tid;
 
   strlcpy_first_word (debug_name, command_line, 64);
 
 //  lock_acquire(&arguments.lock);
-  debug("%s#%d: process_execute(\"%s\") ENTERED 1\n",
-        thread_current()->name,
-        thread_current()->tid,
-        command_line);
 
   /* SCHEDULES function `start_process' to run (LATER) */
   thread_id = thread_create (debug_name, PRI_DEFAULT,
                              (thread_func*)start_process, &arguments);
-  debug("%s#%d: process_execute(\"%s\") ENTERED 2\n",
-        thread_current()->name,
-        thread_current()->tid,
-        command_line);
+
   debug("%s#%d: process_execute(\"%s\") THREAD ID: %i\n",
         thread_current()->name,
         thread_current()->tid,
@@ -395,7 +408,6 @@ start_process (struct parameters_to_start_process* parameters)
         thread_current()->tid,
         success);
 
-  parameters->success = success;
 
   if (success)
   {
@@ -417,9 +429,18 @@ start_process (struct parameters_to_start_process* parameters)
 
     if_.esp = setup_main_stack(parameters->command_line, if_.esp);
 
+    int plist_position = plist_insert(p_list, thread_current()->tid, parameters->process_parent_id, thread_current()->name);
+    if (plist_position == -1) {
+      success = false;
+    } else {
+      // Add the process' position in the process list
+      thread_current()->plist_position = plist_position;
+    }
 //    dump_stack ( PHYS_BASE + 15, PHYS_BASE - if_.esp + 16 );
 
   }
+
+  parameters->success = success;
 
   debug("%s#%d: start_process(\"%s\") DONE - SUCCESS: %i\n",
         thread_current()->name,
@@ -436,8 +457,9 @@ start_process (struct parameters_to_start_process* parameters)
   */
 //  lock_release(&parameters->lock);
 
-  // Count up the semaphore to release the "lock"
+  // Count up the semaphore to release the "lock" and continue the execution
   sema_up(&parameters->sema);
+
   if ( ! success )
   {
     thread_exit ();
@@ -465,13 +487,32 @@ int
 process_wait (int child_id) 
 {
   int status = -1;
-  struct thread *cur = thread_current ();
+  // The parent-process
+  struct thread *current_running_thread = thread_current ();
 
   debug("%s#%d: process_wait(%d) ENTERED\n",
-        cur->name, cur->tid, child_id);
+        current_running_thread->name, current_running_thread->tid, child_id);
+
+  debug("%s#%d: process_wait(%d) STATUS %d\n",
+        current_running_thread->name, current_running_thread->tid, child_id, current_running_thread->status);
+
   /* Yes! You need to do something good here ! */
+  int child_process_position = plist_is_parent_to(p_list, child_id, current_running_thread->tid);
+
+  debug("%s#%d: process_wait(%d) IS CHILD PROCESS %i - POSITION: %i\n",
+        current_running_thread->name, current_running_thread->tid, child_id, child_process_position != -1, child_process_position);
+
+  if (child_process_position != -1) {
+    struct plist_info *child_process = plist_get(p_list, child_process_position);
+    sema_down(&child_process->p_sema);
+    debug("%s#%d: process_wait(%d) EXIT STATUS %d\n",
+          current_running_thread->name, current_running_thread->tid, child_id, child_process->exit_status);
+//    cond_wait(&p_cond, &child_process->p_lock);
+    status = child_process->exit_status;
+  }
+
   debug("%s#%d: process_wait(%d) RETURNS %d\n",
-        cur->name, cur->tid, child_id, status);
+        current_running_thread->name, current_running_thread->tid, child_id, status);
   
   return status;
 }
@@ -497,8 +538,10 @@ process_cleanup (void)
   
   debug("%s#%d: process_cleanup() ENTERED\n", cur->name, cur->tid);
 
-  // Remove all opened files from the current process
-  flist_remove_all(&cur->flist);
+  debug("%s#%d: process_cleanup() STATUS: %i\n", cur->name, cur->tid, cur->status);
+
+  struct plist_info *cur_info = plist_get(p_list, cur->plist_position);
+  status = cur_info->exit_status;
 
   /* Later tests DEPEND on this output to work correct. You will have
    * to find the actual exit status in your process list. It is
@@ -508,7 +551,13 @@ process_cleanup (void)
    * possibly before the prontf is completed.)
    */
   printf("%s: exit(%d)\n", thread_name(), status);
-  
+
+  // Remove all opened files from the current process
+  flist_remove_all(&cur->flist);
+
+  debug("%s#%d: process_cleanup() REMOVING FROM PLIST POSITION: %i\n", cur->name, cur->tid, cur->plist_position);
+  plist_remove(p_list, cur->plist_position, cur->tid);
+
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
   if (pd != NULL) 
@@ -526,6 +575,8 @@ process_cleanup (void)
     }  
   debug("%s#%d: process_cleanup() DONE with status %d\n",
         cur->name, cur->tid, status);
+
+  sema_up(&cur_info->p_sema);
 }
 
 /* Sets up the CPU for running user code in the current

@@ -1,0 +1,100 @@
+# PLIST - DEBUG: #####################################################################
+# PLIST - DEBUG: # POS  | ID   | NAME                | P_ID | P_ALIVE | FREE | ALIVE #
+# PLIST - DEBUG: # ----------------------------------------------------------------- #
+# PLIST - DEBUG: # 0    | 103  | dummy               | 63   | 1       | 0    | 0     #
+# PLIST - DEBUG: # 1    | 71   | dummy               | 19   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 2    | 95   | dummy               | 63   | 1       | 0    | 0     #
+# PLIST - DEBUG: # 3    | 8    | dummy               | 4    | 0       | 0    | 0     #
+# PLIST - DEBUG: # 4    | 61   | dummy               | 40   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 5    | 11   | dummy               | 4    | 0       | 0    | 0     #
+# PLIST - DEBUG: # 6    | 37   | dummy               | 16   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 7    | 14   | dummy               | 4    | 0       | 0    | 0     #
+# PLIST - DEBUG: # 8    | 17   | dummy               | 4    | 0       | 0    | 0     #
+# PLIST - DEBUG: # 9    | 15   | dummy               | 13   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 10   | 18   | dummy               | 16   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 11   | 20   | dummy               | 13   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 12   | 21   | dummy               | 16   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 13   | 22   | dummy               | 13   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 14   | 23   | dummy               | 16   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 15   | 24   | dummy               | 13   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 16   | 25   | dummy               | 16   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 17   | 26   | dummy               | 13   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 18   | 27   | dummy               | 16   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 19   | 28   | dummy               | 13   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 20   | 29   | dummy               | 16   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 21   | 30   | dummy               | 13   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 22   | 31   | dummy               | 16   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 23   | 32   | dummy               | 13   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 24   | 33   | dummy               | 16   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 25   | 34   | dummy               | 13   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 26   | 35   | dummy               | 16   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 27   | 36   | dummy               | 13   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 28   | 88   | dummy               | 7    | 0       | 0    | 0     #
+# PLIST - DEBUG: # 29   | 38   | dummy               | 4    | 0       | 0    | 0     #
+# PLIST - DEBUG: # 30   | 102  | dummy               | 63   | 1       | 0    | 0     #
+# PLIST - DEBUG: # 31   | 12   | dummy               | 10   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 32   | 42   | dummy               | 40   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 33   | 44   | dummy               | 10   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 34   | 45   | dummy               | 40   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 35   | 46   | dummy               | 10   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 36   | 47   | dummy               | 40   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 37   | 48   | dummy               | 10   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 38   | 49   | dummy               | 40   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 39   | 50   | dummy               | 10   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 40   | 51   | dummy               | 40   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 41   | 52   | dummy               | 10   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 42   | 53   | dummy               | 40   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 43   | 54   | dummy               | 10   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 44   | 55   | dummy               | 40   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 45   | 56   | dummy               | 10   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 46   | 57   | dummy               | 40   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 47   | 58   | dummy               | 10   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 48   | 59   | dummy               | 40   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 49   | 60   | dummy               | 10   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 50   | 41   | dummy               | 4    | 0       | 0    | 0     #
+# PLIST - DEBUG: # 51   | 63   | generic_parent      | 3    | 1       | 0    | 1     #
+# PLIST - DEBUG: # 52   | 39   | dummy               | 19   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 53   | 64   | dummy               | 4    | 0       | 0    | 0     #
+# PLIST - DEBUG: # 54   | 67   | dummy               | 19   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 55   | 68   | dummy               | 4    | 0       | 0    | 0     #
+# PLIST - DEBUG: # 56   | 69   | dummy               | 19   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 57   | 70   | dummy               | 4    | 0       | 0    | 0     #
+# PLIST - DEBUG: # 58   | 9    | dummy               | 7    | 0       | 0    | 0     #
+# PLIST - DEBUG: # 59   | 62   | dummy               | 43   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 60   | 72   | dummy               | 19   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 61   | 73   | dummy               | 7    | 0       | 0    | 0     #
+# PLIST - DEBUG: # 62   | 74   | dummy               | 43   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 63   | 75   | dummy               | 19   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 64   | 76   | dummy               | 7    | 0       | 0    | 0     #
+# PLIST - DEBUG: # 65   | 77   | dummy               | 43   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 66   | 78   | dummy               | 19   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 67   | 79   | dummy               | 7    | 0       | 0    | 0     #
+# PLIST - DEBUG: # 68   | 80   | dummy               | 43   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 69   | 81   | dummy               | 19   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 70   | 82   | dummy               | 7    | 0       | 0    | 0     #
+# PLIST - DEBUG: # 71   | 83   | dummy               | 43   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 72   | 84   | dummy               | 19   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 73   | 85   | dummy               | 7    | 0       | 0    | 0     #
+# PLIST - DEBUG: # 74   | 86   | dummy               | 43   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 75   | 87   | dummy               | 19   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 76   | 65   | dummy               | 63   | 1       | 0    | 0     #
+# PLIST - DEBUG: # 77   | 90   | dummy               | 7    | 0       | 0    | 0     #
+# PLIST - DEBUG: # 78   | 91   | dummy               | 63   | 1       | 0    | 0     #
+# PLIST - DEBUG: # 79   | 92   | dummy               | 7    | 0       | 0    | 0     #
+# PLIST - DEBUG: # 80   | 93   | dummy               | 63   | 1       | 0    | 0     #
+# PLIST - DEBUG: # 81   | 94   | dummy               | 7    | 0       | 0    | 0     #
+# PLIST - DEBUG: # 82   | 89   | dummy               | 43   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 83   | 96   | dummy               | 63   | 1       | 0    | 0     #
+# PLIST - DEBUG: # 84   | 97   | dummy               | 43   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 85   | 98   | dummy               | 63   | 1       | 0    | 0     #
+# PLIST - DEBUG: # 86   | 99   | dummy               | 43   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 87   | 100  | dummy               | 63   | 1       | 0    | 0     #
+# PLIST - DEBUG: # 88   | 101  | dummy               | 43   | 0       | 0    | 0     #
+# PLIST - DEBUG: # 89   | 66   | generic_parent      | 3    | 1       | 0    | 1     #
+# PLIST - DEBUG: # ----------------------------------------------------------------- #
+# PLIST - DEBUG: # Total list size: 90                                               #
+# PLIST - DEBUG: # Total alive count: 2                                              #
+# PLIST - DEBUG: # Total dead count: 88                                              #
+# PLIST - DEBUG: # Total zombie count: 88                                            #
+# PLIST - DEBUG: #                                                                   #
+# PLIST - DEBUG: #####################################################################

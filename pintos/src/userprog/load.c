@@ -112,7 +112,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
   if (file == NULL)
     {
-      printf ("load: %s: open failed\n", file_name);
+      printf ("load (tid: %i): %s: open failed\n", t->tid, file_name);
       goto done; 
     }
 

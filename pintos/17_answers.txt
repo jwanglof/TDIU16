@@ -1,0 +1,85 @@
+1) Lägg till nya processen i listan före anropet av thread_create i process_execute
+    • Kommer den nya tråden att lägga till sin egen process i processlistan?
+      (Ja / Nej, det gör förälder-tråden)
+      SVAR: Nej, det gör förälder-tråden
+    • Är förälderns process-id tillgängligt när informationen om den nya processen skall läggas till i processlistan?
+      (Ja, direkt / Ja, det kan lätt ordnas / Nej, det går absolut inte att få tag på)
+      SVAR: Ja, direkt
+    • Är den nya processens process-id tillgängligt vid den placeringen?
+      (Ja, direkt / Ja, det kan lätt ordnas / Nej, det går absolut inte att få tag på)
+      SVAR: Nej, det går absolut inte att få tag på
+    • Processens id kommer att användas senare, när barnprocessen når process_cleanup, för att kunna ta bort processen
+       ur processlistan. Är det garanterat att koden som lägger till den nya processen i processlistan alltid kommer
+       exekveras innan den nya tråden exekverar process_cleanup? Detta är en viktig punkt.
+      (Ja / Nej, den nya processen kan hinna avsluta innan den läggs till i listan)
+      SVAR: Ja.. ?
+    • Överensstämmer uppgiften att lägga till en ny process i processlistan med intentionen av den
+       funktionen du utför det? (Se uppgift 10 för intentionen och ansvarsfördelningen mellan de olika tråd- och processfunktionerna,
+       kort sammanfattat nedan.)
+      (Ja, absolut / Ja, ganska bra / Nej, inte alls)
+      SVAR: Nej, inte alls. Den nya processen kan inte registreras
+
+2) Lägg till nya processen i listan inuti thread_create
+    • Kommer den nya tråden att lägga till sin egen process i processlistan?
+      (Ja / Nej, det gör förälder-tråden)
+      SVAR: Nej, det gör förälder-tråden
+    • Är förälderns process-id tillgängligt när informationen om den nya processen skall läggas till i processlistan?
+      (Ja, direkt / Ja, det kan lätt ordnas / Nej, det går absolut inte att få tag på)
+      SVAR: Nej, det går absolut inte att få tag på
+    • Är den nya processens process-id tillgängligt vid den placeringen?
+      (Ja, direkt / Ja, det kan lätt ordnas / Nej, det går absolut inte att få tag på)
+      SVAR: Nej, det går absolut inte att få tag på. Kan få tag i trådens ID dock
+    • Processens id kommer att användas senare, när barnprocessen når process_cleanup, för att kunna ta bort processen
+       ur processlistan. Är det garanterat att koden som lägger till den nya processen i processlistan alltid kommer
+       exekveras innan den nya tråden exekverar process_cleanup? Detta är en viktig punkt.
+      (Ja / Nej, den nya processen kan hinna avsluta innan den läggs till i listan)
+      SVAR: Nej
+    • Överensstämmer uppgiften att lägga till en ny process i processlistan med intentionen av den
+       funktionen du utför det? (Se uppgift 10 för intentionen och ansvarsfördelningen mellan de olika tråd- och processfunktionerna,
+       kort sammanfattat nedan.)
+      (Ja, absolut / Ja, ganska bra / Nej, inte alls)
+      SVAR: Ja, absolut
+
+
+3) Lägg till nya processen i listan inuti start_process  <---- THIS ONE!
+    • Kommer den nya tråden att lägga till sin egen process i processlistan?
+      (Ja / Nej, det gör förälder-tråden)
+      SVAR: Ja
+    • Är förälderns process-id tillgängligt när informationen om den nya processen skall läggas till i processlistan?
+      (Ja, direkt / Ja, det kan lätt ordnas / Nej, det går absolut inte att få tag på)
+      SVAR: Ja, det kan lätt ordnas
+    • Är den nya processens process-id tillgängligt vid den placeringen?
+      (Ja, direkt / Ja, det kan lätt ordnas / Nej, det går absolut inte att få tag på)
+      SVAR: Ja, direkt
+    • Processens id kommer att användas senare, när barnprocessen når process_cleanup, för att kunna ta bort processen
+       ur processlistan. Är det garanterat att koden som lägger till den nya processen i processlistan alltid kommer
+       exekveras innan den nya tråden exekverar process_cleanup? Detta är en viktig punkt.
+      (Ja / Nej, den nya processen kan hinna avsluta innan den läggs till i listan)
+      SVAR: Ja
+    • Överensstämmer uppgiften att lägga till en ny process i processlistan med intentionen av den
+       funktionen du utför det? (Se uppgift 10 för intentionen och ansvarsfördelningen mellan de olika tråd- och processfunktionerna,
+       kort sammanfattat nedan.)
+      (Ja, absolut / Ja, ganska bra / Nej, inte alls)
+      SVAR: Nej, inte alls. Eller.. ?
+
+
+4) Lägg till nya processen i listan efter anropet av thread_create i process_execute
+    • Kommer den nya tråden att lägga till sin egen process i processlistan?
+      (Ja / Nej, det gör förälder-tråden)
+      SVAR: Ja
+    • Är förälderns process-id tillgängligt när informationen om den nya processen skall läggas till i processlistan?
+      (Ja, direkt / Ja, det kan lätt ordnas / Nej, det går absolut inte att få tag på)
+      SVAR: Ja, direkt
+    • Är den nya processens process-id tillgängligt vid den placeringen?
+      (Ja, direkt / Ja, det kan lätt ordnas / Nej, det går absolut inte att få tag på)
+      SVAR: Ja, direkt
+    • Processens id kommer att användas senare, när barnprocessen når process_cleanup, för att kunna ta bort processen
+       ur processlistan. Är det garanterat att koden som lägger till den nya processen i processlistan alltid kommer
+       exekveras innan den nya tråden exekverar process_cleanup? Detta är en viktig punkt.
+      (Ja / Nej, den nya processen kan hinna avsluta innan den läggs till i listan)
+      SVAR: Nej, den nya processen kan hinna avsluta innan den läggs till i listan pga "if ( ! success )"-satsen i start_process()
+    • Överensstämmer uppgiften att lägga till en ny process i processlistan med intentionen av den
+       funktionen du utför det? (Se uppgift 10 för intentionen och ansvarsfördelningen mellan de olika tråd- och processfunktionerna,
+       kort sammanfattat nedan.)
+      (Ja, absolut / Ja, ganska bra / Nej, inte alls)
+      SVAR: Ja, ganska bra

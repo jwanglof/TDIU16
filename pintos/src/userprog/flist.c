@@ -3,8 +3,8 @@
 
 #include "flist.h"
 
-#define DBG(format, ...) printf("# FLIST - DEBUG: " format "\n", ##__VA_ARGS__)
-//#define DBG(format, ...)
+//#define DBG(format, ...) printf("# FLIST - DEBUG: " format "\n", ##__VA_ARGS__)
+#define DBG(format, ...)
 
 /**
  * Returns true if the list accepts new files
