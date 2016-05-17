@@ -29,7 +29,7 @@ void test_main(void)
 	unsigned page = (unsigned)pg_round_up(&global);
 
 	// Reserve space for 3 parameters (write requires 4).
-	page -= sizeof(int) * 4;
+	page -= sizeof(int) * 3;
 
 	asm volatile (
 		"movl %%esp, %%edi;"
