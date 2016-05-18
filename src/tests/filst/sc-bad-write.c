@@ -28,23 +28,45 @@ void test_main(void)
 	// Get the addres of the first unmapped page in the system.
 	unsigned page = (unsigned)pg_round_up(&global);
 
-	// Reserve space for 3 parameters (write requires 4).
-	page -= sizeof(int) * 3;
+	// Reserve space for 4 parameters.
+	unsigned base = page - sizeof(int) * 4;
 
+	// Call write() with space for 4 parameters (should be fine).
 	asm volatile (
 		"movl %%esp, %%edi;"
 		"movl %0, %%esp;"       // Set stack pointer to right below page boundary.
 		"movl %1, (%%esp);"     // Try to call SYS_WRITE
 		"movl %2, 4(%%esp);"    // Write to STDOUT
 		"movl %3, 8(%%esp);"    // Load buffer.
-		//"movl $5, 12(%%esp);" // Can not write the last parameter as we would get a pagefault.
+		"movl $6, 12(%%esp);"   // Write length of string
+		"int $0x30;"
+		"movl %%edi, %%esp;"    // Restore esp.
+		:
+		: "r" (base),
+		  "i" (SYS_WRITE),
+		  "i" (STDOUT_FILENO),
+		  "i" ("WORKS\n")
+		: "%esp", "%eax", "%edi");
+
+
+	// Reserve space for 3 parameters (write requires 4).
+	base = page - sizeof(int) * 3;
+
+	// Call write() with space for 3 parameters (the kernel should kill us for doing this).
+	asm volatile (
+		"movl %%esp, %%edi;"
+		"movl %0, %%esp;"       // Set stack pointer to right below page boundary.
+		"movl %1, (%%esp);"     // Try to call SYS_WRITE
+		"movl %2, 4(%%esp);"    // Write to STDOUT
+		"movl %3, 8(%%esp);"    // Load buffer.
+		//"movl $6, 12(%%esp);" // Can not write the last parameter as we would get a pagefault.
 		"int $0x30;"
 		"movl %%edi, %%esp;"    // Restore esp in case we do not crash (as we should).
 		:
-		: "r" (page),
+		: "r" (base),
 		  "i" (SYS_WRITE),
 		  "i" (STDOUT_FILENO),
-		  "i" ("TEST\n")
+		  "i" ("FAIL!\n")
 		: "%esp", "%eax", "%edi");
 
 	fail("should have died.");
