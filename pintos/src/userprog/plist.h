@@ -57,26 +57,8 @@ struct plist {
   p_info list[PLIST_SIZE];
 };
 
-//struct plist p_list[PLIST_SIZE];
-
 //struct semaphore p_list_sema;
 struct lock p_list_lock;
-
-//void plist_init(struct plist *p_list);
-//void plist_reset_position(struct plist *p_list, int position);
-//void plist_make_available(struct plist *p_list, int position);
-//void plist_kill(struct plist *p_list, int position);
-//void plist_kill_parent(struct plist *p_list, int position);
-//void plist_change_position_exit_status(struct plist *p_list, int position, int new_exit_status);
-//bool plist_parent_alive(struct plist *p_list, int parent_id);
-//void plist_kill_parent_mark(struct plist *p_list, int parent_id);
-//int plist_get_next_free_position(struct plist *p_list);
-//int plist_insert(struct plist *p_list, int process_id, int process_parent_id, char *process_name);
-//struct plist_info *plist_get(struct plist *p_list, int position);
-//int plist_is_parent_to(struct plist *p_list, int child_process_id, int parent_id);
-//void plist_remove(struct plist *p_list, int position, int thread_id);
-//int plist_get_size(struct plist *p_list);
-
 
 /**
  * A function that given process information (up to you to create) inserts this in a list of running processes
