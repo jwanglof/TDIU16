@@ -19,14 +19,14 @@ static inline void *pg_round_up (const void *va) {
 }
 
 /**
- * A global variable that will give us an address in the BSS segment.
+ * External symbol which address is the first address after all data in the BSS segment.
  */
-int global = 3;
+extern int _end_bss;
 
 void test_main(void)
 {
 	// Get the addres of the first unmapped page in the system.
-	unsigned page = (unsigned)pg_round_up(&global);
+	unsigned page = (unsigned)pg_round_up(&_end_bss);
 
 	// Reserve space for 4 parameters.
 	unsigned base = page - sizeof(int) * 4;
