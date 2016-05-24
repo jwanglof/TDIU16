@@ -2,6 +2,7 @@
 #define FILESYS_FILESYS_H
 
 #include <stdbool.h>
+#include <threads/synch.h>
 #include "filesys/off_t.h"
 
 /* Sectors of system file inodes. */
@@ -10,6 +11,9 @@
 
 /* Disk used for file system. */
 extern struct disk *filesys_disk;
+
+// Filesys lock
+struct lock filesys_lock;
 
 void filesys_init (bool format);
 void filesys_done (void);

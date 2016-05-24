@@ -118,6 +118,7 @@ init_thread (struct thread *t, const char *name, int priority)
   // Initiate a new flist
   flist_init(&t->flist);
 //  plist_change_position_exit_status()
+//  t->plist_position = -1;
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.

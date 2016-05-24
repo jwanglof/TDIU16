@@ -1,10 +1,11 @@
 #include <stddef.h>
 #include <stdio.h>
+#include <filesys/filesys.h>
 
 #include "flist.h"
 
-//#define DBG(format, ...) printf("# FLIST - DEBUG: " format "\n", ##__VA_ARGS__)
-#define DBG(format, ...)
+#define DBG(format, ...) printf("# FLIST - DEBUG: " format "\n", ##__VA_ARGS__)
+//#define DBG(format, ...)
 
 /**
  * Returns true if the list accepts new files
@@ -56,7 +57,8 @@ void flist_reset_position(struct flist *flist, int content_index) {
 
   // Close the file if it is opened
   if (flist->content[content_index] != NULL) {
-    file_close(flist->content[content_index]);
+//    file_close(flist->content[content_index]);
+    filesys_close(flist->content[content_index]);
   }
   // "Reset" the index
   flist->content[content_index] = NULL;
@@ -88,9 +90,9 @@ int flist_insert(struct flist *flist, struct file *file) {
  */
 struct file* flist_get_from_index(struct flist *flist, int fd_index) {
   struct file* file = flist->content[fd_index];
-//  if (flist->content[fd_index].process_id == process_id) {
-//    file = flist->content[fd_index].file;
-//  }
+  if (fd_index == -1) {
+    file = NULL;
+  }
   DBG("flist_get_from_index - fd_index: %i, file: %p", fd_index, file);
   return file;
 }
@@ -113,7 +115,7 @@ int flist_remove(struct flist *flist, int fd_index) {
     return fd_index;
   }
   DBG("flist_remove - Could not remove the file! arg fd_index: %i, saved file address: %p", fd_index, file);
-  return NULL;
+  return -1;
 }
 
 /**

@@ -116,16 +116,30 @@ load (const char *file_name, void (**eip) (void), void **esp)
       goto done; 
     }
 
+  off_t asd = file_read (file, &ehdr, sizeof ehdr);
+  int asd2 = memcmp (ehdr.e_ident, "\177ELF\1\1\1", 7);
+
   /* Read and verify executable header. */
-  if (file_read (file, &ehdr, sizeof ehdr) != sizeof ehdr
-      || memcmp (ehdr.e_ident, "\177ELF\1\1\1", 7)
+  if (asd != sizeof ehdr
+      || asd2
       || ehdr.e_type != 2
       || ehdr.e_machine != 3
       || ehdr.e_version != 1
       || ehdr.e_phentsize != sizeof (struct Elf32_Phdr)
       || ehdr.e_phnum > 1024) 
     {
-      printf ("load: %s: error loading executable\n", file_name);
+//      debug("");
+//      debug("1: %i\n", asd != sizeof ehdr);
+//      debug("2: %i\n", asd2);
+//      debug("3: %i\n", ehdr.e_type != 2);
+//      debug("4: %i\n", ehdr.e_machine != 3);
+//      debug("5: %i\n", ehdr.e_version != 1);
+//      debug("6: %i\n", ehdr.e_phentsize != sizeof (struct Elf32_Phdr));
+//      debug("7: %i -- %d\n", ehdr.e_phnum > 1024, ehdr.e_phnum);
+//      debug("");
+
+
+      printf ("load (tid: %i): %s: error loading executable\n", t->tid, file_name);
       goto done; 
     }
 

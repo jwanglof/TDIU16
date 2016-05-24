@@ -12,6 +12,7 @@
 #include "threads/thread.h"
 #include "threads/vaddr.h"     /* PHYS_BASE */
 #include "threads/interrupt.h" /* if_ */
+#include "threads/init.h"      /* power_off() */
 
 /* Headers not yet used that you may need for various reasons. */
 #include "threads/synch.h"
@@ -138,12 +139,14 @@ void* setup_main_stack(const char* command_line, void* stack_top)
   MAIN_STACK_DBG("argc = %d\n", argc);
 
   /* calculate the size needed on our simulated stack */
-//  total_size = line_size;  // argc-total-length-size
+/*//  total_size = line_size;  // argc-total-length-size
 //  total_size += argc * 4;  // argc-size in bytes
 //  total_size += 4;  // argv's
 //  total_size += 4;  // last argv
 //  total_size += 4;  // argc-address
-//  total_size += 4;  // return address
+//  total_size += 4;  // return address*/
+
+
   // sizeof(struct) = total size of the main_args struct
   // sizeof(char*) gives exact byte of a char* (4 byte)
   // (argc + 1) the amount of argc's plus program name
@@ -237,10 +240,10 @@ void* setup_main_stack(const char* command_line, void* stack_top)
  * the process subsystem. */
 void process_init(void)
 {
-  plist_init(p_list);
+  plist_init(&p_list);
   cond_init(&p_cond);
 //  sema_init(&p_list_sema, 1);
-  debug("PROCESS INIT DONE");
+  debug("PROCESS INIT DONE\n");
 }
 
 /* This function is currently never called. As thread_exit does not
@@ -248,27 +251,22 @@ void process_init(void)
  * instead. Note however that all cleanup after a process must be done
  * in process_cleanup, and that process_cleanup are already called
  * from thread_exit - do not call cleanup twice! */
-void process_exit(int status UNUSED)  // TODO ASK: What does UNUSED do? tldr plz
-//void process_exit(int status)
+void process_exit(int status)
 {
-//  struct plist_info *current_plist_entry = plist_get(p_list, thread_current()->plist_position);
-//  if (current_plist_entry != NULL) {
-//    current_plist_entry->exit_status = status;
-  debug("%s#%d: process_exit ENTERED\n",
+  debug("%s#%d: process_exit ENTERED, STATUS: %i\n",
         thread_current()->name,
-        thread_current()->tid);
-    plist_change_position_exit_status(p_list, thread_current()->plist_position, status);
-    thread_exit();
-//  } else {
-//    debug("EPIC FAIL!!!!!");
-//  }
+        thread_current()->tid,
+        status);
+//    plist_change_position_exit_status(p_list, thread_current()->plist_position, status);
+  plist_change_exit_status(&p_list, thread_current()->tid, status);
+  thread_exit();
 }
 
 /* Print a list of all running processes. The list shall include all
  * relevant debug information in a clean, readable format. */
 void process_print_list()
 {
-  debug("\n\nLOOOOOOOOOOOOL GAAAAAAAAAAAAAAAAY\n\n");
+  plist_print(&p_list);
 }
 
 
@@ -316,7 +314,7 @@ process_execute (const char *command_line)
   sema_init(&arguments.sema, 0);
   // Initiate the lock
   // TODO Do I need a lock?
-  lock_init(&arguments.lock);
+//  lock_init(&arguments.lock);
 
   // Add the parent process ID to the arguments so it can be used in start_process
   arguments.process_parent_id = thread_current()->tid;
@@ -329,21 +327,21 @@ process_execute (const char *command_line)
   thread_id = thread_create (debug_name, PRI_DEFAULT,
                              (thread_func*)start_process, &arguments);
 
-  debug("%s#%d: process_execute(\"%s\") THREAD ID: %i\n",
+  process_id = thread_id;
+
+  debug("%s#%d: process_execute(\"%s\") PROCESS ID: %i\n",
         thread_current()->name,
         thread_current()->tid,
         command_line,
-        thread_id);
-
+        process_id);
   // Count down the semaphore so we wait until start_process() is done
   // If thread_id is -1 we weren't able to create a thread for some reason (e.g. if giving -tcl=2 as argument to PintOS)
-  if (thread_id != -1) {
+  if (process_id != -1) {
     sema_down(&arguments.sema);
   }
 
 //  lock_release(&arguments.lock);
 
-  process_id = thread_id;
 
   debug("%s#%d: process_execute(\"%s\") SUCCESS: %i\n",
         thread_current()->name,
@@ -408,9 +406,11 @@ start_process (struct parameters_to_start_process* parameters)
         thread_current()->tid,
         success);
 
-
   if (success)
   {
+    debug("%s#%d: start_process(...): INSIDE SUCCESS\n",
+          thread_current()->name,
+          thread_current()->tid);
     /* We managed to load the new program to a process, and have
        allocated memory for a process stack. The stack top is in
        if_.esp, now we must prepare and place the arguments to main on
@@ -429,13 +429,15 @@ start_process (struct parameters_to_start_process* parameters)
 
     if_.esp = setup_main_stack(parameters->command_line, if_.esp);
 
-    int plist_position = plist_insert(p_list, thread_current()->tid, parameters->process_parent_id, thread_current()->name);
+    int plist_position = plist_insert(&p_list, thread_current()->tid, thread_current()->name, parameters->process_parent_id);
+    debug("%s#%d: start_process(...): PLIST POSITION IS %d\n",
+          thread_current()->name,
+          thread_current()->tid,
+          plist_position);
     if (plist_position == -1) {
       success = false;
-    } else {
-      // Add the process' position in the process list
-      thread_current()->plist_position = plist_position;
     }
+
 //    dump_stack ( PHYS_BASE + 15, PHYS_BASE - if_.esp + 16 );
 
   }
@@ -486,30 +488,24 @@ start_process (struct parameters_to_start_process* parameters)
 int
 process_wait (int child_id) 
 {
-  int status = -1;
+//  int status = -1;
   // The parent-process
   struct thread *current_running_thread = thread_current ();
 
   debug("%s#%d: process_wait(%d) ENTERED\n",
         current_running_thread->name, current_running_thread->tid, child_id);
 
+//  struct plist_info *current = plist_get_process(&p_list, child_id);
+//  if (current != NULL) {
+//    sema_down(&current->p_sema);
+//    status = current->exit_status;
+//    current->free = true;
+//  }
+
+  int status = plist_process_exit_status_get(&p_list, child_id);
+
   debug("%s#%d: process_wait(%d) STATUS %d\n",
         current_running_thread->name, current_running_thread->tid, child_id, current_running_thread->status);
-
-  /* Yes! You need to do something good here ! */
-  int child_process_position = plist_is_parent_to(p_list, child_id, current_running_thread->tid);
-
-  debug("%s#%d: process_wait(%d) IS CHILD PROCESS %i - POSITION: %i\n",
-        current_running_thread->name, current_running_thread->tid, child_id, child_process_position != -1, child_process_position);
-
-  if (child_process_position != -1) {
-    struct plist_info *child_process = plist_get(p_list, child_process_position);
-    sema_down(&child_process->p_sema);
-    debug("%s#%d: process_wait(%d) EXIT STATUS %d\n",
-          current_running_thread->name, current_running_thread->tid, child_id, child_process->exit_status);
-//    cond_wait(&p_cond, &child_process->p_lock);
-    status = child_process->exit_status;
-  }
 
   debug("%s#%d: process_wait(%d) RETURNS %d\n",
         current_running_thread->name, current_running_thread->tid, child_id, status);
@@ -540,23 +536,29 @@ process_cleanup (void)
 
   debug("%s#%d: process_cleanup() STATUS: %i\n", cur->name, cur->tid, cur->status);
 
-  struct plist_info *cur_info = plist_get(p_list, cur->plist_position);
-  status = cur_info->exit_status;
+  struct plist_info *child_info = plist_find(&p_list, cur->tid);
+  if (child_info != NULL) {
+    debug("%s#%d: process_cleanup() NEW STATUS: %d\n",
+          cur->name, cur->tid, child_info->exit_status);
+    status = child_info->exit_status;
+  } else {
+    debug("%s#%d: process_cleanup() CHILD INFO IS NULL!\n", cur->name, cur->tid);
+  }
 
   /* Later tests DEPEND on this output to work correct. You will have
    * to find the actual exit status in your process list. It is
    * important to do this printf BEFORE you tell the parent process
    * that you exit.  (Since the parent may be the main() function,
    * that may sometimes poweroff as soon as process_wait() returns,
-   * possibly before the prontf is completed.)
+   * possibly before the printf is completed.)
    */
+//  printf("%s#%d: exit(%d)\n", thread_name(), thread_tid(), status);
   printf("%s: exit(%d)\n", thread_name(), status);
 
   // Remove all opened files from the current process
   flist_remove_all(&cur->flist);
-
-  debug("%s#%d: process_cleanup() REMOVING FROM PLIST POSITION: %i\n", cur->name, cur->tid, cur->plist_position);
-  plist_remove(p_list, cur->plist_position, cur->tid);
+  // "Remove" the process from the process-list
+  plist_remove(&p_list, cur->tid);
 
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
@@ -575,8 +577,6 @@ process_cleanup (void)
     }  
   debug("%s#%d: process_cleanup() DONE with status %d\n",
         cur->name, cur->tid, status);
-
-  sema_up(&cur_info->p_sema);
 }
 
 /* Sets up the CPU for running user code in the current

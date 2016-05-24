@@ -16,7 +16,7 @@ bool exists_in(char, const char*);
 int count_args(const char*, const char*);
 void* setup_main_stack(const char*, void*);
 
-struct plist p_list[PLIST_SIZE];
+struct plist p_list;
 struct condition p_cond;
 
 /* This is unacceptable solutions. */

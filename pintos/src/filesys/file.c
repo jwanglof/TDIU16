@@ -1,5 +1,6 @@
 #include "filesys/file.h"
 #include <debug.h>
+#include <stdio.h>
 #include "filesys/inode.h"
 #include "threads/malloc.h"
 
@@ -21,14 +22,17 @@ file_open (struct inode *inode)
     {
       file->inode = inode;
       file->pos = 0;
-      return file;
+//      return file;
     }
   else
     {
+//      debug("FILE - WHY DO YOU HAAAAAAAATE ME? %i --- %i\n", file == NULL, inode == NULL);
+    file = NULL;
       inode_close (inode);
       free (file);
-      return NULL; 
+//      return NULL;
     }
+  return file;
 }
 
 /* Opens and returns a new file for the same inode as FILE.

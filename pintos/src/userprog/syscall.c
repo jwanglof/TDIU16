@@ -21,6 +21,7 @@
 
 #define DBG(sys_call, format, ...) printf("# DEBUG: " sys_call " -- " format "\n", ##__VA_ARGS__)
 //#define DBG(format, ...)
+#define DBG_T(sys_call, thread_id, format, ...) printf("# DEBUG: " sys_call "#%i -- " format "\n", thread_id, ##__VA_ARGS__)
 #define DBG_CURR(sys_call, format, ...) printf("# DEBUG CURRENT: " sys_call " -- " format "\n", ##__VA_ARGS__)
 
 static void syscall_handler (struct intr_frame *);
@@ -61,6 +62,8 @@ syscall_handler (struct intr_frame *f)
 //  DBG("Stack top + 1: %d\n", esp[1]);
 //  DBG("TOP", "EAX: %i", eax);
 
+  // TODO Måste verifiera att alla esp-index har giltiga adress
+
 
   switch ( esp[0] /* retrive syscall number */ )
   {
@@ -97,10 +100,12 @@ syscall_handler (struct intr_frame *f)
        *    Svar: Processorna fortsätter exekvera från återhoppsadressen och stackpekaren räknas upp för att komma tillbaka till ursprungsläget
        */
       int status = esp[1];
+      int tid = thread_current()->tid;
 
-      DBG("SYS_EXIT", "Sys-call number: %i. ESP: %i", SYS_EXIT, esp[0]);
-      DBG("SYS_EXIT", "Status: %i", esp[1]);
+      DBG_T("SYS_EXIT", tid, "Sys-call number: %i. ESP: %i", SYS_EXIT, esp[0]);
+      DBG_T("SYS_EXIT", tid, "Status: %i", esp[1]);
       process_exit(status);
+      break;
     }
 
     case SYS_READ:
@@ -111,11 +116,13 @@ syscall_handler (struct intr_frame *f)
       // 3 = unsigned length
       int fd = esp[1];
       char *buffer = (char *) esp[2];
-      unsigned length = (unsigned int) esp[3];
+      unsigned length = (unsigned) esp[3];
 
-      DBG("SYS_READ", "Sys-call number: %i. ESP: %i", SYS_READ, esp[0]);
-      DBG("SYS_READ", "FD: %i", fd);
-      DBG("SYS_READ", "Length: %i", length);
+      int tid = thread_current()->tid;
+
+//      DBG("SYS_READ", "Sys-call number: %i. ESP: %i", SYS_READ, esp[0]);
+      DBG_T("SYS_READ", tid, "FD: %i", fd);
+      DBG_T("SYS_READ", tid, "FD: %i. Length: %i", fd, length);
 
       if (fd == STDIN_FILENO) {
 //        DBG("SYS_READ", "Reading from keyboard!");
@@ -134,19 +141,19 @@ syscall_handler (struct intr_frame *f)
         f->eax = length;
 //        DBG("SYS_READ", "DONE reading from keyboard!");
       } else if (fd == STDOUT_FILENO) {
-        DBG("SYS_READ", "PANIC!!");
+        DBG_T("SYS_READ", tid, "PANIC!!");
         // Eh?
         f->eax = (uint32_t) -1;
       } else {
-        DBG("SYS_READ", "Is the file opened?");
+        DBG_T("SYS_READ", tid, "FD: %i. Is the file opened?", fd);
 
         struct file* opened_file = flist_get_from_index(&thread_current()->flist, fd);
         if (opened_file != NULL) {
-          DBG("SYS_READ", "File is opened");
+          DBG_T("SYS_READ", tid, "FD: %i. File is opened", fd);
           off_t bytes_read = file_read(opened_file, buffer, length);
           f->eax = (uint32_t) bytes_read;
         } else {
-          DBG("SYS_READ", "File not opened!");
+          DBG_T("SYS_READ", tid, "FD: %i. File not opened!", fd);
           f->eax = (uint32_t) -1;
         }
       }
@@ -163,14 +170,16 @@ syscall_handler (struct intr_frame *f)
       char *buffer = (char *) esp[2];
       unsigned length = (unsigned int) esp[3];
 
+      int tid = thread_current()->tid;
+
 //      DBG("SYS_WRITE", "Sys-call number: %i. ESP: %i", SYS_WRITE, esp[0]);
-//      DBG("SYS_WRITE", "FD: %i", fd);
-      DBG("SYS_WRITE", "Length: %i", length);
+      DBG_T("SYS_WRITE", tid, "#%i FD: %i", fd, fd);
+      DBG_T("SYS_WRITE", tid, "#%i Length: %i", fd, length);
 
       if (fd == STDIN_FILENO) {
-        DBG("SYS_WRITE", "PANIC!!!");
+        DBG_T("SYS_WRITE", tid, "PANIC!!!");
         // Eh?
-        f->eax = (uint32_t)-1;
+        f->eax = (uint32_t) -1;
       } else if (fd == STDOUT_FILENO) {
         DBG("SYS_WRITE", "Writing to monitor! Length: %i", length);
         putbuf(buffer, length);
@@ -178,13 +187,17 @@ syscall_handler (struct intr_frame *f)
         f->eax = (uint32_t) length;
       } else {
         // Check if FD is in the opened-file-list
-        DBG("SYS_WRITE", "ELSE");
+        DBG_T("SYS_WRITE", tid, "#%i ELSE", fd);
         struct file* opened_file = flist_get_from_index(&thread_current()->flist, fd);
         if (opened_file != NULL) {
           off_t bytes_write = file_write(opened_file, buffer, length);
-          DBG("SYS_WRITE", "Length: %i, bytes write: %i", length, bytes_write);
+          DBG_T("SYS_WRITE", tid, "#%i Length: %i, bytes write: %i", fd, length, bytes_write);
+          if (length != (unsigned) bytes_write) {
+            DBG_T("SYS_WRITE", tid, "ERROR #%i Didn't write everything!", fd);
+          }
           f->eax = (uint32_t) bytes_write;
         } else {
+          DBG_T("SYS_WRITE", tid, "#%i ERROR: opened_file is NULL: %i", fd, opened_file == NULL);
           f->eax = (uint32_t) -1;
         }
       }
@@ -214,14 +227,16 @@ syscall_handler (struct intr_frame *f)
     {
       // esp[#]
       // 1 = const char *file
+      int tid = thread_current()->tid;
+
       char* filename = (char *) esp[1];
 
-      DBG("SYS_OPEN", "Sys-call number: %i. ESP: %i", SYS_OPEN, esp[0]);
-      DBG("SYS_OPEN", "File: %s", filename);
+//      DBG("SYS_OPEN", "Sys-call number: %i. ESP: %i", SYS_OPEN, esp[0]);
+      DBG_T("SYS_OPEN", tid, "File: %s", filename);
 
       struct file *opened_file = filesys_open(filename);
       if (opened_file != NULL) {
-        DBG("SYS_OPEN", "File exist!");
+        DBG_T("SYS_OPEN", tid, "File exist!");
         int fd = flist_insert(&thread_current()->flist, opened_file);
         // If something went wrong when inserting the file to flist we must close it
         if (fd == -1) {
@@ -230,8 +245,9 @@ syscall_handler (struct intr_frame *f)
         } else {
           f->eax = (uint32_t) fd;
         }
+        DBG_T("SYS_OPEN", tid, "FD: %i", fd);
       } else {
-        DBG("SYS_OPEN", "File does not exist!");
+        DBG_T("SYS_OPEN", tid, "File does not exist!");
         f->eax = (uint32_t) -1;
       }
 
@@ -248,7 +264,7 @@ syscall_handler (struct intr_frame *f)
       DBG("SYS_CLOSE", "FD: %i", fd);
 
       struct file* opened_file = flist_get_from_index(&thread_current()->flist, fd);
-      if (opened_file != NULL) {
+      if (opened_file != NULL && fd != -1) {
         // file_close is called in flist_remove()
         flist_remove(&thread_current()->flist, fd);
       } else {
@@ -336,10 +352,10 @@ syscall_handler (struct intr_frame *f)
     {
       // esp[#]
       // 1 = int millis
-      int millis = esp[1];
+      int64_t millis = (int64_t) esp[1];
 
       DBG("SYS_SLEEP", "Sys-call number: %i. ESP: %i", SYS_SLEEP, esp[0]);
-      DBG("SYS_SLEEP", "Millis: %i", millis);
+      DBG("SYS_SLEEP", "Millis: %d", (int) millis);
 
       timer_msleep(millis);
 
@@ -352,7 +368,7 @@ syscall_handler (struct intr_frame *f)
 
       DBG("SYS_PLIST", "Sys-call number: %i. ESP: %i", SYS_PLIST, esp[0]);
 
-      plist_print(p_list);
+      process_print_list();
 
       break;
     }
@@ -360,13 +376,14 @@ syscall_handler (struct intr_frame *f)
     case SYS_EXEC:
     {
       // esp[#]
-      // 1 = const char *file (command_line)
+      // 1 = const char *file (aka command_line)
       const char *file = (const char*) esp[1];
 
       DBG("SYS_EXEC", "Sys-call number: %i. ESP: %i", SYS_EXEC, esp[0]);
       DBG("SYS_EXEC", "File: %s", file);
 
       int process_id = process_execute(file);
+      DBG("SYS_EXEC", "Process ID: %i", process_id);
       f->eax = (uint32_t) process_id;
 
       break;
@@ -378,13 +395,12 @@ syscall_handler (struct intr_frame *f)
       // 1 = pid_t id
       pid_t child_id = esp[1];
 
-      DBG_CURR("SYS_WAIT", "Sys-call number: %i. ESP: %i", SYS_WAIT, esp[0]);
-      DBG_CURR("SYS_WAIT", "Child ID: %d", child_id);
+      DBG("SYS_WAIT", "Sys-call number: %i. ESP: %i", SYS_WAIT, esp[0]);
+      DBG("SYS_WAIT", "Child ID: %d", child_id);
 
       int status = process_wait(child_id);
 
-      DBG_CURR("SYS_WAIT", "Status: %d", status);
-
+      DBG("SYS_WAIT", "Status: %d", status);
 
       f->eax = (uint32_t) status;
       break;

@@ -23,7 +23,7 @@ void debug_panic (const char *file, int line, const char *function,
 void debug_backtrace (void);
 
 /* klaar@ida Parts from 100 to 210 exists (only in reference solution) */
-#define PART 210
+#define PART 190
 #endif
 
 

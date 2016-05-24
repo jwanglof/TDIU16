@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <threads/synch.h>
 #include "devices/disk.h"
 
 /* Maximum length of a file name component.
@@ -12,6 +13,8 @@
 #define NAME_MAX 14
 
 struct inode;
+
+//struct lock directory_lock;
 
 /* Opening and closing directories. */
 bool dir_create (disk_sector_t sector, size_t entry_cnt);

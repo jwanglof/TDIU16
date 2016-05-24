@@ -32,7 +32,7 @@
 #include <threads/synch.h>
 #include <stdbool.h>
 
-#define PLIST_SIZE 128
+#define PLIST_SIZE 512
 #define PLIST_P_NAME 64
 
 typedef struct plist_info p_info;
@@ -91,7 +91,7 @@ void plist_print(struct plist *p_list);
 struct plist_info *plist_get_position(struct plist *p_list, int position);
 struct plist_info *plist_get_process(struct plist *p_list, int process_id);
 bool plist_check_if_parent_alive(struct plist *p_list, int parent_id);
-void plist_kill_parent(struct plist *p_list, int parent_id);
+void plist_kill_children(struct plist *p_list, int parent_id);
 void plist_change_exit_status(struct plist *p_list, int process_id, int new_exit_status);
 int plist_process_exit_status_get(struct plist *p_list, int process_id);
 void plist_init(struct plist *p_list);

@@ -98,7 +98,7 @@ struct thread
 
   // Assign a new flist for each thread
   struct flist flist;
-  int plist_position;
+//  int plist_position;
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */

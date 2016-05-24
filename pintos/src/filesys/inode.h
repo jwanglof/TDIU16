@@ -2,11 +2,13 @@
 #define FILESYS_INODE_H
 
 #include <stdbool.h>
+#include <threads/synch.h>
 #include "filesys/off_t.h"
 #include "devices/disk.h"
 
 struct bitmap;
 
+struct lock inode_lock;
 
 void inode_init (void);
 bool inode_create (disk_sector_t, off_t);
@@ -18,5 +20,8 @@ void inode_remove (struct inode *);
 off_t inode_read_at (struct inode *, void *, off_t size, off_t offset);
 off_t inode_write_at (struct inode *, const void *, off_t size, off_t offset);
 off_t inode_length (const struct inode *);
+
+void inode_acquire_lock(struct inode *inode);
+void inode_release_lock(struct inode *inode);
 
 #endif /* filesys/inode.h */

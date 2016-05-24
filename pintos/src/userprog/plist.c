@@ -26,7 +26,7 @@ struct plist_info *plist_get_process(struct plist *p_list, int process_id) {
 
     w_position++;
   }
-  DBG("plist_get_process", "DONE, ID: %i, is NULL: %i", process_id, process == NULL);
+  DBG("plist_get_process", "DONE, ID: %i, is NULL: %i, position: %i", process_id, process == NULL, w_position);
 
   return process;
 }
@@ -49,7 +49,7 @@ bool plist_check_if_parent_alive(struct plist *p_list, int parent_id) {
   }
 
 //  lock_release(&p_list_lock);
-  DBG("plist_check_if_parent_alive", "DONE, parent ID: %i", parent_id);
+  DBG("plist_check_if_parent_alive", "DONE, parent ID: %i, is alive: %i", parent_id, is_alive);
 
   return is_alive;
 }
@@ -58,12 +58,16 @@ bool plist_check_if_parent_alive(struct plist *p_list, int parent_id) {
  * Go through the entire list
  * If the child have parent_id as parent we will mark the parent as not alive
  */
-void plist_kill_parent(struct plist *p_list, int parent_id) {
+void plist_kill_children(struct plist *p_list, int parent_id) {
   int w_position = 0;
   while (w_position < PLIST_SIZE) {
     struct plist_info *current = plist_get_position(p_list, w_position);
     if (current->parent_id == parent_id) {
       current->parent_alive = false;
+      if (!current->alive) {
+        DBG("plist_kill_children", "Will free child! Process ID: %i, position: %i, parent ID: %i", current->id, w_position, current->parent_id);
+        current->free = true;
+      }
     }
     w_position++;
   }
@@ -76,13 +80,24 @@ void plist_change_exit_status(struct plist *p_list, int process_id, int new_exit
   lock_acquire(&p_list_lock);
   DBG("plist_change_exit_status", "ENTERED, ID: %i, new exit status: %i", process_id, new_exit_status);
   struct plist_info *current = plist_get_process(p_list, process_id);
-//  DBG("plist_change_exit_status", "DONE, ID: %i, is NULL: %i", process_id, current == NULL);
-  current->exit_status = new_exit_status;
-  DBG("plist_change_exit_status", "DONE, ID: %i, new exit status: %i", process_id, new_exit_status);
+  if (current != NULL) {
+    DBG("plist_change_exit_status", "DONE, ID: %i is NOT NULL", process_id);
+    current->exit_status = new_exit_status;
+    // Add sema_up() here instead!
+  } else {
+    DBG("plist_change_exit_status", "DONE, ID: %i is NULL!!!", process_id);
+  }
+  DBG("plist_change_exit_status", "DONE, ID: %i", process_id);
   lock_release(&p_list_lock);
 //  sema_down(&current->p_sema);
 }
 
+/**
+ * Get the exit status for a process in a list
+ * Will run sema_down() since it will be a parent process that runs this function and it will wait for the
+ *   child process ID that is passed to this function
+ * Will run sema_up() in the remove-function
+ */
 int plist_process_exit_status_get(struct plist *p_list, int process_id) {
   struct plist_info *current = plist_get_process(p_list, process_id);
   DBG("plist_process_exit_status_get", "ENTERED, ID: %i", process_id);
@@ -92,7 +107,8 @@ int plist_process_exit_status_get(struct plist *p_list, int process_id) {
     sema_down(&current->p_sema);
     DBG("plist_process_exit_status_get", "BELOW SEMA, ID: %i", process_id);
     exit_status = current->exit_status;
-    current->free = true; // Free the process since it's run-time is done
+    // Free the process since it's run-time is done
+    current->free = true;
   }
   DBG("plist_process_exit_status_get", "DONE, ID: %i, status: %i", process_id, exit_status);
 
@@ -116,6 +132,13 @@ void plist_init(struct plist *p_list) {
   DBG("plist_init", "DONE");
   lock_release(&p_list_lock);
 
+  // Insert dummie parent processes
+  int a = plist_insert(p_list, 1, "lolz", 0);
+  int b = plist_insert(p_list, 2, "lolz#2", 0);
+  struct plist_info *aa = plist_get_position(p_list, a);
+  aa->parent_alive = true;
+  struct plist_info *bb = plist_get_position(p_list, b);
+  bb->parent_alive = true;
 }
 
 
@@ -165,7 +188,7 @@ int plist_insert(struct plist *p_list, int process_id, char process_name[], int 
 struct plist_info *plist_find(struct plist *p_list, int process_id) {
   lock_acquire(&p_list_lock);
   DBG("plist_find", "ENTERED, ID: %i", process_id);
-  plist_print(p_list);
+//  plist_print(p_list);
   struct plist_info *current = plist_get_process(p_list, process_id);
   DBG("plist_find", "DONE, ID: %i, found: %i", process_id, current != NULL);
   lock_release(&p_list_lock);
@@ -182,25 +205,29 @@ void plist_remove(struct plist *p_list, int process_id) {
   DBG("plist_remove", "ENTERED, ID: %i", process_id);
 
   struct plist_info *current = plist_get_process(p_list, process_id);
+  if (current != NULL) {
+    current->alive = false;
 
-  current->alive = false;
+    // Need to check if parent_id is alive
+    // If it is alive, we can't free the position
+    // If it isn't alive, we can free the position
+    if (!plist_check_if_parent_alive(p_list, current->parent_id)) {
+      current->free = true;
+    }
 
-  // Need to check if parent_id is alive
-  // If it is alive, we can't free the position
-  // If it isn't alive, we can free the position
-  if (!plist_check_if_parent_alive(p_list, current->parent_id)) {
-    current->free = true;
+    // Need to tell all the children that this process (parent) is dead
+    plist_kill_children(p_list, current->id);
+
+    sema_up(&current->p_sema);
+  } else {
+    DBG("plist_remove", "Current is NULL! ID: %i", process_id);
   }
-
-  // Need to tell all the children that this process is dead
-  plist_kill_parent(p_list, current->id);
 
   DBG("plist_remove", "DONE, ID: %i", process_id);
 
-  plist_print(p_list);
+//  plist_print(p_list);
 
   lock_release(&p_list_lock);
-  sema_up(&current->p_sema);
 }
 
 void plist_print_position(int position, struct plist_info *current, bool frame) {

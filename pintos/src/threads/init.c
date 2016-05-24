@@ -48,10 +48,19 @@ static bool format_filesys;
 
 /* -q: Power off after kernel tasks complete? */
 bool power_off_when_done = false;
-/* -Q: Force power off by klaar@ida... */
+
+/* Options by klaar@ida */
+
+/* -Q: Force power off */
 bool force_off_when_done = false;
-/* -tcf: Simulate failure in thread_create klaar@ida... */
+/* -F: Set timer frequency */
+static uint16_t init_timer_freq = 1000;
+/* -tcf: Simulate failure in thread_create */
 int thread_create_limit = 0; /* infinite */
+
+static bool prevent_reqursive_off = false;
+
+static void hard_power_off (void) NO_RETURN;
 
 static void ram_init (void);
 static void paging_init (void);
@@ -101,7 +110,7 @@ main (void)
 
   /* Initialize interrupt handlers. */
   intr_init ();
-  timer_init ();
+  timer_init (init_timer_freq);
   kbd_init ();
   input_init ();
 #ifdef USERPROG
@@ -244,6 +253,8 @@ parse_options (char **argv)
         power_off_when_done = true;
       else if (!strcmp (name, "-Q")) // klaar@ida
         power_off_when_done = force_off_when_done = true;
+      else if (!strcmp (name, "-F")) // klaar@ida
+        init_timer_freq = atoi (value);
 #ifdef FILESYS
       else if (!strcmp (name, "-f"))
         format_filesys = true;
@@ -360,6 +371,7 @@ usage (void)
           "  -Q                 Power off VM after actions or on panic.\n"
           "  -q                 Force off VM after actions or on panic.\n"
           "  -f                 Format file system disk during startup.\n"
+          "  -F=COUNT           Interrupts per second [20-60000].\n"
           "  -rs=SEED           Set random number seed to SEED.\n"
           "  -mlfqs             Use multi-level feedback queue scheduler.\n"
 #ifdef USERPROG
@@ -369,23 +381,19 @@ usage (void)
 #endif
           );
 
-  /* klaar@ida disabled due to threads and locks not initialized
+  /* klaar@ida changed due to threads and locks not initialized
    * yet... and power_off() now use locks.
    */
-//  power_off ();
+  hard_power_off ();
 }
-
 
 /* Powers down the machine we're running on,
    as long as we're running on Bochs or QEMU. */
-void
-power_off (void) 
+static void
+hard_power_off (void) 
 {
   const char s[] = "Shutdown";
   const char *p;
-
-  printf ("# Preparing to power off...\n");
-  DEBUG_thread_poweroff_check( force_off_when_done );
 
 #ifdef FILESYS
   filesys_done ();
@@ -410,6 +418,22 @@ power_off (void)
   asm volatile ("cli; hlt" : : : "memory");
   printf ("still running...\n");
   for (;;);
+}
+
+/* Powers down the machine we're running on,
+   as long as we're running on Bochs or QEMU. */
+void
+power_off (void) 
+{
+  if ( prevent_reqursive_off )
+    hard_power_off ();
+    
+  prevent_reqursive_off = true;
+
+  printf ("# Preparing to power off...\n");
+  DEBUG_thread_poweroff_check( force_off_when_done );
+  
+  hard_power_off ();
 }
 
 /* Print statistics about Pintos execution. */
