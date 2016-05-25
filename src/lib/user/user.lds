@@ -16,7 +16,11 @@ SECTIONS
   . = DATA_SEGMENT_ALIGN (0x1000, 0x1000);
 
   .data : { *(.data) }
-  .bss : { *(.bss) }
+  .bss : {
+  *(.bss)
+  /* Get the end of the bss segment as a symbol linkable from C */
+  _end_bss = .;
+  }
 
   /* Stabs debugging sections.  */
   .stab          0 : { *(.stab) }
