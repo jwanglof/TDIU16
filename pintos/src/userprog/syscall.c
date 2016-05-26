@@ -19,14 +19,14 @@
 #include "devices/input.h"
 #include "plist.h"
 
-//#define DBG_R(format, ...) printf("# DEBUG: " format "\n", ##__VA_ARGS__)
-#define DBG_R(format, ...)
-//#define DBG(sys_call, format, ...) printf("# DEBUG: " sys_call " -- " format "\n", ##__VA_ARGS__)
-#define DBG(format, ...)
-//#define DBG_T(sys_call, thread_id, format, ...) printf("# DEBUG: " sys_call "#%i -- " format "\n", thread_id, ##__VA_ARGS__)
-#define DBG_T(format, ...)
-//#define DBG_CURR(sys_call, format, ...) printf("# DEBUG CURRENT: " sys_call " -- " format "\n", ##__VA_ARGS__)
-#define DBG_CURR(format, ...)
+#define DBG_R(format, ...) printf("# DEBUG: " format "\n", ##__VA_ARGS__)
+//#define DBG_R(format, ...)
+#define DBG(sys_call, format, ...) printf("# DEBUG: " sys_call " -- " format "\n", ##__VA_ARGS__)
+//#define DBG(format, ...)
+#define DBG_T(sys_call, thread_id, format, ...) printf("# DEBUG: " sys_call "#%i -- " format "\n", thread_id, ##__VA_ARGS__)
+//#define DBG_T(format, ...)
+#define DBG_CURR(sys_call, format, ...) printf("# DEBUG CURRENT: " sys_call " -- " format "\n", ##__VA_ARGS__)
+//#define DBG_CURR(format, ...)
 
 static void syscall_handler (struct intr_frame *);
 
@@ -63,6 +63,9 @@ const int argc[] = {
  */
 bool verify_fix_length(void* start, int length)
 {
+  if ((start + length) >= PHYS_BASE) {
+    return false;
+  }
   DBG_R("Length: %i\n", length);
 
   void* first_addr_in_page = pg_round_down(start);
@@ -107,6 +110,7 @@ bool verify_variable_length(char* start)
 {
   // Default value for current page so we also check the very first page
   unsigned current_page = (unsigned) -1;
+
   while (true) {
     // If the current page isn't the same as the page the current char is in, verify it!
     if (current_page != pg_no(start)) {
@@ -117,6 +121,10 @@ bool verify_variable_length(char* start)
         return false;
       }
     }
+    if (start >= (char*) PHYS_BASE) {
+      return false;
+    }
+
     // If we have reached the end of the string, bail out
 //    if (is_end_of_string(start)) {
     if (*start == '\0') {
@@ -304,6 +312,10 @@ syscall_handler (struct intr_frame *f)
       char* filename = (char *) esp[1];
       int initial_size = esp[2];
 
+      if (!verify_variable_length((char*)esp+1)) {
+        process_exit(-1);
+      }
+
       DBG("SYS_CREATE", "Sys-call number: %i. ESP: %i", SYS_OPEN, esp[0]);
       DBG("SYS_CREATE", "File: %s", filename);
       DBG("SYS_CREATE", "Initial size: %i", initial_size);
@@ -322,7 +334,7 @@ syscall_handler (struct intr_frame *f)
 
       char* filename = (char *) esp[1];
 
-      if (!verify_variable_length(esp+1)) {
+      if (!verify_variable_length((char*)esp+1)) {
         process_exit(-1);
       }
 
@@ -376,6 +388,10 @@ syscall_handler (struct intr_frame *f)
       // esp[#]
       // 1 = const char *file
       char* filename = (char *) esp[1];
+
+      if (!verify_variable_length((char*)esp+1)) {
+        process_exit(-1);
+      }
 
       DBG("SYS_REMOVE", "Sys-call number: %i. ESP: %i", SYS_REMOVE, esp[0]);
       DBG("SYS_REMOVE", "Filename: %s", filename);
@@ -473,6 +489,10 @@ syscall_handler (struct intr_frame *f)
       // esp[#]
       // 1 = const char *file (aka command_line)
       const char *file = (const char*) esp[1];
+
+      if (!verify_variable_length((char*)esp+1)) {
+        process_exit(-1);
+      }
 
       DBG("SYS_EXEC", "Sys-call number: %i. ESP: %i", SYS_EXEC, esp[0]);
       DBG("SYS_EXEC", "File: %s", file);
