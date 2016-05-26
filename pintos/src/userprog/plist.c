@@ -5,8 +5,8 @@
 
 #include "plist.h"
 
-#define DBG(function_name, format, ...) printf("# PLIST (" function_name "): " format "\n", ##__VA_ARGS__)
-//#define DBG(function_name, format, ...)
+// #define DBG(function_name, format, ...) printf("# PLIST (" function_name "): " format "\n", ##__VA_ARGS__)
+#define DBG(function_name, format, ...)
 
 struct plist_info *plist_get_position(struct plist *p_list, int position) {
   return &p_list->list[position];
@@ -133,12 +133,12 @@ void plist_init(struct plist *p_list) {
   lock_release(&p_list_lock);
 
   // Insert dummie parent processes
-  int a = plist_insert(p_list, 1, "lolz", 0);
+  /*int a = plist_insert(p_list, 1, "lolz", 0);
   int b = plist_insert(p_list, 2, "lolz#2", 0);
   struct plist_info *aa = plist_get_position(p_list, a);
   aa->parent_alive = true;
   struct plist_info *bb = plist_get_position(p_list, b);
-  bb->parent_alive = true;
+  bb->parent_alive = true;*/
 }
 
 

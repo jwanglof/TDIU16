@@ -19,14 +19,18 @@
 #include "devices/input.h"
 #include "plist.h"
 
-#define DBG_R(format, ...) printf("# DEBUG: " format "\n", ##__VA_ARGS__)
-//#define DBG_R(format, ...)
-#define DBG(sys_call, format, ...) printf("# DEBUG: " sys_call " -- " format "\n", ##__VA_ARGS__)
-//#define DBG(format, ...)
+
+//#define DBG(sys_call, format, ...) printf("# DEBUG: " sys_call " -- " format "\n", ##__VA_ARGS__)
+//#define DBG_R(format, ...) printf("# DEBUG: " format "\n", ##__VA_ARGS__)
 #define DBG_T(sys_call, thread_id, format, ...) printf("# DEBUG: " sys_call "#%i -- " format "\n", thread_id, ##__VA_ARGS__)
-//#define DBG_T(format, ...)
-#define DBG_CURR(sys_call, format, ...) printf("# DEBUG CURRENT: " sys_call " -- " format "\n", ##__VA_ARGS__)
-//#define DBG_CURR(format, ...)
+//#define DBG_CURR(sys_call, format, ...) printf("# DEBUG CURRENT: " sys_call " -- " format "\n", ##__VA_ARGS__)
+
+
+#define DBG(format, ...)
+#define DBG_R(format, ...)
+// #define DBG_T(format, ...)
+#define DBG_CURR(format, ...)
+
 
 static void syscall_handler (struct intr_frame *);
 
@@ -63,43 +67,60 @@ const int argc[] = {
  */
 bool verify_fix_length(void* start, int length)
 {
+  DBG_R("PHYS_BASE: %d -- OSV: %d", (int)PHYS_BASE, (start + length));
   if ((start + length) >= PHYS_BASE) {
+    DBG_R("LARGER!");
     return false;
   }
-  DBG_R("Length: %i\n", length);
+  if (start == NULL || length < 0) {
+    DBG_R("Start is NULL: %i --- Length: %i", start == NULL, length);
+    return false;
+  }
+  DBG_R("Length: %i", length);
 
   void* first_addr_in_page = pg_round_down(start);
-  DBG_R("First addr in page: %p (%i)\n", first_addr_in_page, (int)first_addr_in_page);
+  DBG_R("First addr in page: %p (%i)", first_addr_in_page, (int)first_addr_in_page);
 
   int PAGE_OFFSET = (int)start % PGSIZE;
-  DBG_R("Offset: %i\n", PAGE_OFFSET);
+  DBG_R("Offset: %i", PAGE_OFFSET);
 
   int amount_to_last_addr = length + PAGE_OFFSET;
-  DBG_R("Amount to last addr: %i\n", amount_to_last_addr);
+  DBG_R("Amount to last addr: %i", amount_to_last_addr);
 
   int amount_of_pages = amount_to_last_addr / PGSIZE;
-  DBG_R("Amount of pages: %i\n", amount_of_pages);
+  DBG_R("Amount of pages: %i", amount_of_pages);
 
   // We need to have at least one page the address is in!
-  if (amount_of_pages == 0) {
-    amount_of_pages = 1;
-    DBG_R("NEW Amount of pages: %i\n", amount_of_pages);
-  } else if (amount_to_last_addr % PGSIZE != 0) {
+  if (amount_to_last_addr % PGSIZE != 0) {
     // If the amount to the last address isn't 0 we need to add pages because we're trying to verify one more page
     amount_of_pages++;
-    DBG_R("NEW2 Amount of pages: %i\n", amount_of_pages);
+    DBG_R("NEW2 Amount of pages: %i", amount_of_pages);
   }
 
   int position = 0;
   while (position < amount_of_pages) {
-    DBG_R("First addr in page (loop): %p (%i)\n", first_addr_in_page, (int)first_addr_in_page);
+    DBG_R("First addr in page (loop): %p (%i)", first_addr_in_page, (int)first_addr_in_page);
 
-    if (pagedir_get_page(thread_current()->pagedir, first_addr_in_page) == NULL) {
+    void* curr_page = pagedir_get_page(thread_current()->pagedir, first_addr_in_page);
+    DBG_R("Current page is NULL: %i", curr_page == NULL);
+    if (curr_page == NULL) {
       return false;
     }
     first_addr_in_page += PGSIZE;
     position++;
   }
+  // while (true) {
+  //   void* curr_page = pagedir_get_page(thread_current()->pagedir, first_addr_in_page);
+  //   DBG_R("Current page is NULL: %i", curr_page == NULL);
+  //   if (curr_page == NULL) {
+  //     return false;
+  //   }
+  //   first_addr_in_page += PGSIZE;
+  //   if (first_addr_in_page >= (start + length)) {
+  //     return true;
+  //   }
+  // }
+  DBG_R("First addr in page: %p (%i), position: %i", first_addr_in_page, (int)first_addr_in_page, position);
   return true;
 }
 
@@ -209,7 +230,7 @@ syscall_handler (struct intr_frame *f)
       char *buffer = (char *) esp[2];
       unsigned length = (unsigned) esp[3];
 
-      if (!verify_fix_length(esp+2, length)) {
+      if (!verify_fix_length(buffer, length)) {
         process_exit(-1);
       }
 
@@ -265,7 +286,8 @@ syscall_handler (struct intr_frame *f)
       char *buffer = (char *) esp[2];
       unsigned length = (unsigned int) esp[3];
 
-      if (!verify_fix_length(esp+2, length)) {
+      //if (!verify_fix_length(esp+2, length)) {
+      if (!verify_fix_length(buffer, length)) {
         process_exit(-1);
       }
 
@@ -488,17 +510,19 @@ syscall_handler (struct intr_frame *f)
     {
       // esp[#]
       // 1 = const char *file (aka command_line)
-      const char *file = (const char*) esp[1];
+      char *file = (char*) esp[1];
 
-      if (!verify_variable_length((char*)esp+1)) {
+      int tid = thread_current()->tid;
+
+      if (verify_variable_length(file) == false) {
         process_exit(-1);
       }
 
-      DBG("SYS_EXEC", "Sys-call number: %i. ESP: %i", SYS_EXEC, esp[0]);
-      DBG("SYS_EXEC", "File: %s", file);
+      DBG_T("SYS_EXEC", tid, "Sys-call number: %i. ESP: %i", SYS_EXEC, esp[0]);
+      DBG_T("SYS_EXEC", tid, "File: %s", file);
 
       int process_id = process_execute(file);
-      DBG("SYS_EXEC", "Process ID: %i", process_id);
+      DBG_T("SYS_EXEC", tid, "Process ID: %i", process_id);
       f->eax = (uint32_t) process_id;
 
       break;

@@ -5,7 +5,7 @@
 #include "flist.h"
 
 #define DBG(format, ...) printf("# FLIST - DEBUG: " format "\n", ##__VA_ARGS__)
-//#define DBG(format, ...)
+// #define DBG(format, ...)
 
 /**
  * Returns true if the list accepts new files
@@ -21,7 +21,7 @@ bool flist_can_insert(struct flist *flist) {
 void flist_init(struct flist *flist) {
   int position = 0;
   while (position < MAP_SIZE) {
-    flist_reset_position(flist, position);
+    flist_reset_position(flist, position + START_POSITION);
     position++;
   }
   flist->initiated = true;
@@ -73,6 +73,10 @@ int flist_insert(struct flist *flist, struct file *file) {
   if (flist_can_insert(flist)) {
     int file_position = flist_get_next_free_position(flist);
 
+
+
+    DBG("flist_insert - file_position: %i", file_position);
+
 //    flist->content[file_position].file = file;
 //    flist->content[file_position].process_id = process_id;
     flist->content[file_position] = file;
@@ -89,6 +93,9 @@ int flist_insert(struct flist *flist, struct file *file) {
  * it.
  */
 struct file* flist_get_from_index(struct flist *flist, int fd_index) {
+  if (fd_index > MAP_SIZE + START_POSITION || fd_index < 0) {
+    return NULL;
+  }
   struct file* file = flist->content[fd_index];
   if (fd_index == -1) {
     file = NULL;

@@ -129,24 +129,17 @@ bool
 dir_lookup (const struct dir *dir, const char *name,
             struct inode **inode)
 {
-//  lock_acquire(&directory_lock);
   struct dir_entry e;
 
   ASSERT (dir != NULL);
   ASSERT (name != NULL);
 
-//  debug("DIRECTORY - (%s) - DIR IS NULL: %i\n", name, dir == NULL);
-//  debug("DIRECTORY - (%s) - NAME IS NULL: %i\n", name, name == NULL);
-
   if (lookup (dir, name, &e, NULL)) {
-//    debug("DIRECTORY - (%s) - LOOKUP SUCCESSFUL!\n", name);
     *inode = inode_open (e.inode_sector);
   } else {
-//    debug("DIRECTORY - (%s) - LOOKUP NOOOOOT SUCCESSFUL!\n", name);
     *inode = NULL;
   }
 
-//  lock_release(&directory_lock);
   return *inode != NULL;
 }
 
@@ -181,7 +174,7 @@ dir_add (struct dir *dir, const char *name, disk_sector_t inode_sector)
   /* Set OFS to offset of free slot.
      If there are no free slots, then it will be set to the
      current end-of-file.
-     
+
      inode_read_at() will only return a short read at end of file.
      Otherwise, we'd need to verify that we didn't get a short
      read due to something intermittent such as low memory. */
