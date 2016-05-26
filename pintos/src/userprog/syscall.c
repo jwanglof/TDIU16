@@ -19,16 +19,19 @@
 #include "devices/input.h"
 #include "plist.h"
 
-#define DBG_R(format, ...) printf("# DEBUG: " format "\n", ##__VA_ARGS__)
-#define DBG(sys_call, format, ...) printf("# DEBUG: " sys_call " -- " format "\n", ##__VA_ARGS__)
-//#define DBG(format, ...)
-#define DBG_T(sys_call, thread_id, format, ...) printf("# DEBUG: " sys_call "#%i -- " format "\n", thread_id, ##__VA_ARGS__)
-#define DBG_CURR(sys_call, format, ...) printf("# DEBUG CURRENT: " sys_call " -- " format "\n", ##__VA_ARGS__)
+//#define DBG_R(format, ...) printf("# DEBUG: " format "\n", ##__VA_ARGS__)
+#define DBG_R(format, ...)
+//#define DBG(sys_call, format, ...) printf("# DEBUG: " sys_call " -- " format "\n", ##__VA_ARGS__)
+#define DBG(format, ...)
+//#define DBG_T(sys_call, thread_id, format, ...) printf("# DEBUG: " sys_call "#%i -- " format "\n", thread_id, ##__VA_ARGS__)
+#define DBG_T(format, ...)
+//#define DBG_CURR(sys_call, format, ...) printf("# DEBUG CURRENT: " sys_call " -- " format "\n", ##__VA_ARGS__)
+#define DBG_CURR(format, ...)
 
 static void syscall_handler (struct intr_frame *);
 
 void
-syscall_init (void) 
+syscall_init (void)
 {
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
 }
@@ -37,15 +40,15 @@ syscall_init (void)
 /* This array defined the number of arguments each syscall expects.
    For example, if you want to find out the number of arguments for
    the read system call you shall write:
-   
+
    int sys_read_arg_count = argc[ SYS_READ ];
-   
+
    All system calls have a name such as SYS_READ defined as an enum
    type, see `lib/syscall-nr.h'. Use them instead of numbers.
  */
 const int argc[] = {
   /* basic calls */
-  0, 1, 1, 1, 2, 1, 1, 1, 3, 3, 2, 1, 1, 
+  0, 1, 1, 1, 2, 1, 1, 1, 3, 3, 2, 1, 1,
   /* not implemented */
   2, 1,    1, 1, 2, 1, 1,
   /* extended */
@@ -125,7 +128,7 @@ bool verify_variable_length(char* start)
 
 
 static void
-syscall_handler (struct intr_frame *f) 
+syscall_handler (struct intr_frame *f)
 {
   int32_t* esp = (int32_t*)f->esp;
   uint32_t eax = (uint32_t)f->eax;
@@ -134,11 +137,11 @@ syscall_handler (struct intr_frame *f)
 //  DBG("Stack top + 1: %d\n", esp[1]);
 //  DBG("TOP", "EAX: %i", eax);
 
-  // Verify that ESP is valid first
+  // Verify that the ESP is valid first
   if (!verify_fix_length(esp, 4)) {
     process_exit(-1);
   }
-  
+
   // Verify that each of the arguments are valid
   int arg_count = argc[esp[0]];
   if (!verify_fix_length(esp, arg_count*4)) {
@@ -198,6 +201,10 @@ syscall_handler (struct intr_frame *f)
       char *buffer = (char *) esp[2];
       unsigned length = (unsigned) esp[3];
 
+      if (!verify_fix_length(esp+2, length)) {
+        process_exit(-1);
+      }
+
       int tid = thread_current()->tid;
 
 //      DBG("SYS_READ", "Sys-call number: %i. ESP: %i", SYS_READ, esp[0]);
@@ -249,6 +256,10 @@ syscall_handler (struct intr_frame *f)
       int fd = esp[1];
       char *buffer = (char *) esp[2];
       unsigned length = (unsigned int) esp[3];
+
+      if (!verify_fix_length(esp+2, length)) {
+        process_exit(-1);
+      }
 
       int tid = thread_current()->tid;
 
@@ -310,6 +321,10 @@ syscall_handler (struct intr_frame *f)
       int tid = thread_current()->tid;
 
       char* filename = (char *) esp[1];
+
+      if (!verify_variable_length(esp+1)) {
+        process_exit(-1);
+      }
 
 //      DBG("SYS_OPEN", "Sys-call number: %i. ESP: %i", SYS_OPEN, esp[0]);
       DBG_T("SYS_OPEN", tid, "File: %s", filename);
@@ -489,7 +504,7 @@ syscall_handler (struct intr_frame *f)
     default:
     {
       printf ("Executed an unknown system call!\n");
-      
+
       printf ("Stack top + 0: %d\n", esp[0]);
       printf ("Stack top + 1: %d\n", esp[1]);
       printf ("Stack top + 2: %d\n", esp[2]);
