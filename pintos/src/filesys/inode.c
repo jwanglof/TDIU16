@@ -203,6 +203,7 @@ inode_close (struct inode *inode)
   lock_acquire(&inode->inode_lock);
   if (--inode->open_cnt == 0)
     {
+      lock_release(&inode->inode_lock);
       /* Remove from inode list. */
       list_remove (&inode->elem);
       
@@ -216,7 +217,6 @@ inode_close (struct inode *inode)
         }
 
       free (inode);
-      lock_release(&inode->inode_lock);
 //      return;
     } else {
     lock_release(&inode->inode_lock);

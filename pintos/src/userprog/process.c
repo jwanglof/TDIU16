@@ -594,4 +594,3 @@ process_activate (void)
      interrupts. */
   tss_update ();
 }
-

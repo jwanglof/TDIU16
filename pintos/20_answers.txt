@@ -1,0 +1,105 @@
+1) Katalogen är tom. Två processer lägger till filen “kalle.txt” samtidigt. Är det efteråt garanterat att katalogen
+    innehåller endast en fil “kalle.txt”?
+Svar: Nej, eftersom filesys.c är inte synkroniserad. Om båda processerna är inne i filesys_create() samtidigt
+        kommer den antagligen inte skapas den andra gången.
+
+        Add files:
+          - filesys_create (const char *name, off_t initial_size)
+            -> dir_open_root ()
+            -> free_map_allocate()
+            -> inode_create()
+            -> dir_add()
+            - IF failed or couldn't allocate sequential sectors
+              -> free_map_release()
+            - IF success
+              -> dir_close()
+
+2) Katalogen innehåller en fil “kalle.txt”. Två processer tar bort “kalle.txt”, och en process lägger samtidigt
+    till “nisse.txt”. Är det efteråt garanterat att katalogen innehåller endast fil “nisse.txt”?
+Svar: Ja, dock får kanske den ena processen som försöker ta bort filen "kalle.txt" som redan är borttagen ett error
+
+        Delete files:
+          - filesys_remove (const char *name)
+            -> dir_open_root()
+            -> dir_remove()
+            -> dir_close()
+        Add files: See 1)
+
+3) Systemets globala inode-lista är tom. Tre processer öppnar samtidigt filen “kalle.txt”. Är det garanterat att
+    inode-listan sedan innehåller endast en cachad referens till filen, med open_cnt lika med 3?
+Svar: Nej. När en process öppnar en inode (från inode_open()) itereras den öppna inode-listan och kollar om en inode
+        är öppen eller inte. Om den inte är öppen initieras open_cnt till 1, annars räknas open_cnt upp. Dock kan
+        denna loop startas av de 3 olika processerna samtidigt och därför blir open_cnt initierad varje gång
+
+        Open files:
+          - filesys_open(const char *name)
+            -> dir_open_root()
+            - IF dir_open_root() succeded:
+              -> dir_lookup(const struct dir *dir, const char *name, struct inode **inode)
+                 -> IF lookup()
+                    -> inode_open(disk_sector_t sector)
+                        -> Iterates through the global inode-list to see if the file to be opened is already opened
+                           - IF in the list:
+                             -> inode_reopen()
+                           - ELSE:
+                             -> malloc()
+                             -> list_push_front()
+                             -> disk_read()
+                                -> SYNCED
+            -> dir_close()
+            -> file_open()
+               -> calloc() (allocate memory)
+
+4) Systemets globala inode-lista innehåller en referens till “kalle.txt” med open_cnt lika med 1. En process stänger
+    filen samtidigt som en annan process öppnar filen. Är det garanterat att inode-listan efteråt innehåller samma
+    information?
+Svar: Nej. Om processen som stänger filen kommer först kommer filens minne att avallokeras och inode:n kommer inte
+        finnas längre
+
+        Close files:
+          - filesys_close(struct file *file)
+            -> file_close()
+               -> IF file is not NULL
+                  -> inode_close()
+                     -> IF inode is not NULL
+                        -> IF open_cnt == 0
+                           -> list_remove()
+                              -> SYNCED
+                           -> IF inode is marked as removed
+                              -> free_map_release()
+                           -> free(inode)
+                  -> free(file)
+
+5) Free-map innehåller två sekvenser med 5 lediga block. Två processer skapar samtidigt två filer som behöver 5
+    lediga block. Är det efteråt garanterat att filerna har fått var sin sekvens lediga block?
+Svar: Nej. Båda processerna kan ha fått tillgång till samma sekvens av lediga block iom att filesys_create() inte är
+        synkroniserad
+
+        Create files:
+          - filesys_create(const char *name, off_t initial_size)
+            -> dir_open_root()
+               -> dir_open()
+            -> free_map_allocate()
+            -> inode_create()
+               -> calloc
+                  -> IF calloc was successful:
+                     -> bytes_to_sectors()
+                     -> IF free_map_allocate()
+                        -> disk_write()
+                     -> free()
+            -> dir_add()
+               -> A lot of checks
+            -> If unsuccessful:
+               -> free_map_release()
+            -> dir_close()
+
+6) Katalogen innehåller en fil “kalle.txt”. Systemets globala inode-lista innehåller en referens till samma fil med
+    open_cnt lika med 1. Free-map har 5 block markerade som upptagna. En process tar bort filen “kalle.txt” samtidigt
+    som en annan process stänger filen “kalle.txt”. Är det efteråt garanterat att inode-listan är tom, att free-map har
+    5 nya lediga block, och att katalogen är tom?
+Svar: Nej. Om processen som stänger filen kommer först och kör klart kommer inode:n vara avallokerad från minnet och
+        den process som försöker ta bort den kommer misslyckas. Eeeller kommer detta funka eftersom inode_remove() bara
+        markerar removed som true?
+
+7) Liknande frågor skall du själv ställa dig i relation till din process-lista och till din(a) fil-list(or).
+Svar: Har redan lås däri. Räcker det?

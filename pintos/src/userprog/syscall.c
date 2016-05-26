@@ -19,6 +19,7 @@
 #include "devices/input.h"
 #include "plist.h"
 
+#define DBG_R(format, ...) printf("# DEBUG: " format "\n", ##__VA_ARGS__)
 #define DBG(sys_call, format, ...) printf("# DEBUG: " sys_call " -- " format "\n", ##__VA_ARGS__)
 //#define DBG(format, ...)
 #define DBG_T(sys_call, thread_id, format, ...) printf("# DEBUG: " sys_call "#%i -- " format "\n", thread_id, ##__VA_ARGS__)
@@ -51,6 +52,77 @@ const int argc[] = {
   0
 };
 
+/* Kontrollera alla adresser från och med start till och inte med
+ * (start+length). */
+/**
+ * Kontrollera alla adresser från och med start till och inte med (start+length).
+ * Returnerar true om alla adresser i intervallet är giltiga
+ */
+bool verify_fix_length(void* start, int length)
+{
+  DBG_R("Length: %i\n", length);
+
+  void* first_addr_in_page = pg_round_down(start);
+  DBG_R("First addr in page: %p (%i)\n", first_addr_in_page, (int)first_addr_in_page);
+
+  int PAGE_OFFSET = (int)start % PGSIZE;
+  DBG_R("Offset: %i\n", PAGE_OFFSET);
+
+  int amount_to_last_addr = length + PAGE_OFFSET;
+  DBG_R("Amount to last addr: %i\n", amount_to_last_addr);
+
+  int amount_of_pages = amount_to_last_addr / PGSIZE;
+  DBG_R("Amount of pages: %i\n", amount_of_pages);
+
+  // We need to have at least one page the address is in!
+  if (amount_of_pages == 0) {
+    amount_of_pages = 1;
+    DBG_R("NEW Amount of pages: %i\n", amount_of_pages);
+  } else if (amount_to_last_addr % PGSIZE != 0) {
+    // If the amount to the last address isn't 0 we need to add pages because we're trying to verify one more page
+    amount_of_pages++;
+    DBG_R("NEW2 Amount of pages: %i\n", amount_of_pages);
+  }
+
+  int position = 0;
+  while (position < amount_of_pages) {
+    DBG_R("First addr in page (loop): %p (%i)\n", first_addr_in_page, (int)first_addr_in_page);
+
+    if (pagedir_get_page(thread_current()->pagedir, first_addr_in_page) == NULL) {
+      return false;
+    }
+    first_addr_in_page += PGSIZE;
+    position++;
+  }
+  return true;
+}
+
+/* Kontrollera alla adresser från och med start till och med den
+ * adress som först innehåller ett noll-tecken, `\0'. (C-strängar
+ * lagras på detta sätt.) */
+bool verify_variable_length(char* start)
+{
+  // Default value for current page so we also check the very first page
+  unsigned current_page = (unsigned) -1;
+  while (true) {
+    // If the current page isn't the same as the page the current char is in, verify it!
+    if (current_page != pg_no(start)) {
+      current_page = pg_no(start);
+
+      // Verify the page
+      if (pagedir_get_page(thread_current()->pagedir, start) == NULL) {
+        return false;
+      }
+    }
+    // If we have reached the end of the string, bail out
+//    if (is_end_of_string(start)) {
+    if (*start == '\0') {
+      return true;
+    }
+    start++;
+  }
+}
+
 
 static void
 syscall_handler (struct intr_frame *f) 
@@ -62,8 +134,16 @@ syscall_handler (struct intr_frame *f)
 //  DBG("Stack top + 1: %d\n", esp[1]);
 //  DBG("TOP", "EAX: %i", eax);
 
-  // TODO Måste verifiera att alla esp-index har giltiga adress
-
+  // Verify that ESP is valid first
+  if (!verify_fix_length(esp, 4)) {
+    process_exit(-1);
+  }
+  
+  // Verify that each of the arguments are valid
+  int arg_count = argc[esp[0]];
+  if (!verify_fix_length(esp, arg_count*4)) {
+    process_exit(-1);
+  }
 
   switch ( esp[0] /* retrive syscall number */ )
   {
